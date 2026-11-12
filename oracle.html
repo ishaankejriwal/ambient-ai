@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Ambient AI Metrics in the Oracle Health Export</title>
+<meta name="description" content="For each ambient AI metric in the CHAI framework: the formula in words, the same formula built from Oracle Health (Cerner Millennium) EHI export tables and columns, what a row is, and the gaps with ways to close them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* One reading column. Summary table first, then one card per metric. Every card has the same four rows under its status line. */
+:root {
+  --bg: #ffffff; --fg: #1c1c1c; --fg-2: #555555; --fg-3: #8a8a8a;
+  --line: #dddddd; --line-2: #efefef; --f-bg: #f7f7f5;
+  --accent: #1f4e79; --yes: #2e7d32; --partly: #c77d00; --no: #9e9e9e;
+  --miss: #b3261e; --miss-bg: #fff6f5; --mono-fg: #333333;
+  --sans: 'Atkinson Hyperlegible', 'Segoe UI', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161616; --fg: #e8e8e8; --fg-2: #b0b0b0; --fg-3: #7a7a7a; --line: #333333; --line-2: #262626; --f-bg: #1d1d1d;
+    --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --mono-fg: #cfcfcf;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161616; --fg: #e8e8e8; --fg-2: #b0b0b0; --fg-3: #7a7a7a; --line: #333333; --line-2: #262626; --f-bg: #1d1d1d;
+  --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --mono-fg: #cfcfcf;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { font-family: var(--sans); background: var(--bg); color: var(--fg); font-size: 16px; line-height: 1.55; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.page { max-width: 920px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 48px 64px; }
+h1 { font-size: 30px; line-height: 1.2; font-weight: 700; margin-bottom: 14px; text-wrap: balance; }
+h2 { font-size: 21px; font-weight: 700; margin: 44px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+h3 { font-size: 17px; font-weight: 700; margin: 34px 0 4px; }
+p { margin-bottom: 12px; max-width: 70ch; text-wrap: pretty; }
+p.small, li.small { font-size: 14px; color: var(--fg-2); }
+ul { padding-left: 20px; margin-bottom: 12px; max-width: 70ch; }
+li { margin-bottom: 5px; }
+code { font-family: var(--mono); font-size: 13.5px; color: var(--mono-fg); }
+.status { font-weight: 700; white-space: nowrap; }
+.status::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: var(--c); transform: translateY(-1px); }
+.yes { --c: var(--yes); } .partly { --c: var(--partly); } .no { --c: var(--no); }
+.tbl-wrap { overflow-x: auto; margin: 12px 0 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th { text-align: left; font-size: 13px; color: var(--fg-2); font-weight: 700; padding: 6px 10px 6px 0; border-bottom: 2px solid var(--fg); }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+tr.grp td { padding-top: 16px; font-weight: 700; color: var(--fg-2); font-size: 13px; border-bottom: 0; }
+td a { color: inherit; text-decoration: none; }
+td a:hover { text-decoration: underline; }
+td code { font-size: 12.5px; }
+.words { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; margin: 10px 0 16px; font-size: 14.5px; max-width: 70ch; }
+.words dt { font-weight: 700; float: left; clear: left; width: 70px; }
+.words dd { margin-left: 80px; margin-bottom: 6px; }
+.words dd:last-child { margin-bottom: 0; }
+/* Formula block. Solid chip = a column in the export. Dashed red chip = not in the export, with where to get it. */
+.f { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 7px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--f-bg); font-family: var(--mono); font-size: 13px; line-height: 1.35; color: var(--fg); }
+.f .v { display: inline-flex; flex-direction: column; padding: 3px 7px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--mono-fg); font-weight: 500; }
+.f .v .tb { font-size: 10.5px; font-weight: 400; color: var(--fg-3); letter-spacing: .02em; }
+.f .v .tb::after { content: " table"; font-family: var(--sans); }
+.f .x { display: inline-flex; flex-direction: column; padding: 3px 7px 4px; border: 1.5px dashed var(--miss); border-radius: 4px; background: var(--miss-bg); color: var(--fg); font-family: var(--sans); font-size: 13px; }
+.f .x .src { font-size: 10.5px; color: var(--miss); font-weight: 700; }
+.f .x .src::before { content: "not in Oracle · get from "; font-weight: 400; }
+.f .br { flex-basis: 100%; height: 0; }
+.f .ln { display: contents; }
+.f .ln > span.t { font-family: var(--sans); font-size: 12.5px; color: var(--fg-2); min-width: 100%; margin: 4px 0 -2px; }
+.f .ln > span.t:first-child { margin-top: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; color: var(--fg-2); margin: 6px 0 14px; }
+.legend .f { padding: 4px 8px; gap: 6px; }
+.legend .lg { display: inline-flex; align-items: center; gap: 8px; }
+.m { padding: 4px 0 20px; border-bottom: 1px solid var(--line-2); scroll-margin-top: 20px; }
+.m .top { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 10px; }
+.m dl { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px 14px; font-size: 15px; }
+.m dt { color: var(--fg-3); font-size: 13px; padding-top: 2px; }
+.m dd { min-width: 0; max-width: 78ch; }
+.m dd.wide { max-width: none; }
+.m dd.w { font-size: 15px; }
+.m dd ul { margin: 0; padding-left: 18px; }
+.m dd ul li { font-size: 14.5px; margin-bottom: 3px; }
+.m dd code { display: inline-block; }
+@media (max-width: 600px) {
+  .m dl { grid-template-columns: 1fr; gap: 2px 0; }
+  .m dt { margin-top: 10px; }
+  .words dt { float: none; width: auto; }
+  .words dd { margin-left: 0; }
+}
+
+/* Site nav: the three systems, current one underlined. */
+.nav { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 28px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.nav .lbl { color: var(--fg-3); }
+.nav a { color: var(--fg-2); text-decoration: none; padding-bottom: 2px; border-bottom: 2px solid transparent; }
+.nav a:hover { color: var(--fg); border-bottom-color: var(--line); }
+.nav a[aria-current="page"] { color: var(--fg); font-weight: 700; border-bottom-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+<nav class="nav" aria-label="EHR system"><span class="lbl">Ambient AI metrics in the EHI export of:</span><a href="index.html">Epic</a><a href="oracle.html" aria-current="page">Oracle Health</a><a href="athena.html">athenahealth</a></nav>
+
+<h1>Can Oracle Health's EHI export score the ambient AI metrics?</h1>
+<p>The framework spreadsheet lists 20 metrics for ambient AI scribes. Oracle Health (the former Cerner Millennium) ships a data model with its electronic health information (EHI) export: 6,620 tables and their columns. This page maps each metric onto those tables. The Epic version of the same page is <a href="index.html">ambient-ehi-crosswalk.html</a>.</p>
+<p>Of the 20 metrics, <span id="counts"></span>. "Partly" means Oracle has some inputs to the formula, such as the patient groups or the notes to sample, and the measurement itself comes from a survey, the vendor or a chart review.</p>
+
+<h2>Table, row and column</h2>
+<dl class="words">
+  <dt>Table</dt><dd>One file in the export, like one tab of a spreadsheet. <code>ENCOUNTER</code> is the visits table.</dd>
+  <dt>Row</dt><dd>One line in that table. In <code>ENCOUNTER</code> a row is one visit. In <code>CLINICAL_EVENT</code> a row is one version of one note or result.</dd>
+  <dt>Column</dt><dd>One item every row has. <code>ENCOUNTER.ARRIVE_DT_TM</code> is the arrival time column in the visits table.</dd>
+</dl>
+
+<h2>How to read a formula</h2>
+<div class="legend">
+  <span class="lg"><div class="f"><span class="v"><span class="tb">CLINICAL_EVENT</span>VERIFIED_DT_TM</span></div><span>a column Oracle has. Table on top, column below.</span></span>
+  <span class="lg"><div class="f"><span class="x"><span>the thing you still need</span><span class="src">where</span></span></div><span>a piece Oracle does not have</span></span>
+</div>
+<p class="small">Each card has a status line and four rows: "In words" is the formula as a sentence, "With columns" is the same formula with each input as a box, "What a row is" says what one line of each table means, and "Gaps and checks" says what is missing and how to get it. The words between boxes are plain arithmetic: count, mean, minus, divided by. |x| is the size of a difference and → means look up. Rates are fractions; multiply by 100 to show a percent. Percentage-point formulas already include that step. Count each visit or note once.</p>
+<p class="small">The status follows from the boxes. Yes means every box is from Oracle, partly means some boxes are red, no means every box is red. For a no, any Oracle columns sit under a label starting "Oracle only" and do not count toward the status. Every status also assumes you have built the list of scribe visits described below. Without that list nothing on this page can be scored.</p>
+
+<h2>How to read the Oracle model</h2>
+<ul class="small">
+  <li class="small">Almost every column ending in <code>_CD</code> is a number that points at a pick-list. Look the number up in <code>CODE_VALUE</code>: <code>CODE_VALUE.DISPLAY</code> is the label your site shows, and <code>CODE_VALUE.CDF_MEANING</code> is a short fixed code that does not change between sites. Match on the fixed code where you can. Words below such as "sign" or "attending" are the usual meanings.</li>
+  <li class="small">Every column ending in <code>_ID</code> is a real ID. <code>PERSON_ID</code> is the patient, <code>ENCNTR_ID</code> the visit, <code>EVENT_ID</code> the note, <code>PRSNL_ID</code> or <code>PRSNL_PERSON_ID</code> the staff member. Staff names and credentials are in <code>PRSNL</code> and <code>CREDENTIAL</code>.</li>
+  <li class="small">Times (<code>_DT_TM</code>) are stored in UTC when the database runs in UTC mode, which most do. Confirm with your analyst. Some tables carry a matching <code>_TZ</code> column; where they do not, convert with the facility's time zone before taking a date.</li>
+  <li class="small">Rows are versioned. Any update to a note adds a <code>CLINICAL_EVENT</code> row with the same <code>EVENT_ID</code>. The current version has an "open" <code>VALID_UNTIL_DT_TM</code>, which means the far-future date 31 Dec 2100. The same rule applies to <code>CE_EVENT_PRSNL</code> and <code>CE_BLOB</code>. Every formula below means the open row.</li>
+  <li class="small">A note is a parent event with one child document event under it (<code>CLINICAL_EVENT.PARENT_EVENT_ID</code>). The text sits on the child, in <code>CE_BLOB.BLOB_CONTENTS</code>, in one or more chunks, compressed as <code>CE_BLOB.COMPRESSION_CD</code> says. Some documents are stored outside the database; <code>CE_BLOB_RESULT.STORAGE_CD</code> says where.</li>
+  <li class="small">Who did what to a note is in <code>CE_EVENT_PRSNL</code>: one row per action (author, sign, cosign, modify, correct, review) with the person, a timestamp and a status (requested or completed).</li>
+  <li class="small">The export is requested per patient. <code>EHI_QUEUE_PERSON_RELTN</code> holds the patient list for a request, and <code>EHI_QUEUE.EHI_GROUP_ID</code> groups the batches of a multi-patient request. Population metrics need a multi-patient request or many requests merged.</li>
+  <li class="small"><code>EHI_COL_EXCEPTION</code> lists the columns Oracle leaves out of the export. Check any column on this page against it in your first file.</li>
+</ul>
+
+<h2>Finding the scribe visits and notes</h2>
+<p>Oracle's model has no ambient table, so you have to build the list of scribe visits. Four ways, strongest first:</p>
+<ul>
+  <li>Ask the vendor for its session log with the visit each session belongs to. Join on <code>ENCOUNTER.ENCNTR_ID</code> if the vendor stores it, otherwise on the financial number (FIN, the billing account number) in <code>ENCNTR_ALIAS.ALIAS</code> plus the date.</li>
+  <li>Give AI-drafted notes their own note type when the scribe is set up. Then a scribe note is a <code>CLINICAL_EVENT</code> row whose <code>EVENT_CD</code> is that type, and a scribe visit is its <code>ENCNTR_ID</code>.</li>
+  <li>If the vendor writes notes through an interface or a service account, its notes may carry their own <code>CLINICAL_EVENT.CONTRIBUTOR_SYSTEM_CD</code>, <code>CLINICAL_EVENT.ENTRY_MODE_CD</code> or <code>CE_DRAFT.ENTRY_MODE_CD</code>, or show the service account in <code>CE_EVENT_PRSNL.PROXY_PRSNL_ID</code>. Check a few known scribe notes before relying on any of these.</li>
+  <li>Oracle's own ambient product (Clinical AI Agent) writes into the same note tables. No public column marks its notes, so ask your Oracle representative which of the above applies.</li>
+</ul>
+<p>Throughout the page, a scribe note is the current version of the clinician's progress note on a scribe visit: a <code>CLINICAL_EVENT</code> row with a document class, the progress note <code>EVENT_CD</code>, <code>RECORD_STATUS_CD</code> active and <code>RESULT_STATUS_CD</code> not in error or cancelled. The clinician is the person who signed that note, <code>CE_EVENT_PRSNL.ACTION_PRSNL_ID</code> on the sign row. If the note is unsigned, fall back to the attending in <code>ENCNTR_PRSNL_RELTN</code>. "Before" and "after" mean the weeks before and after that clinician's first scribe visit. For every before-and-after metric, compare adopters against same-specialty clinicians who did not adopt, since volume and timing also move with templates, vacations and panel changes.</p>
+
+<h2>Summary</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Metric</th><th>From the export?</th><th>Main tables</th></tr></thead>
+  <tbody id="summary"></tbody>
+</table>
+</div>
+
+<h2>Metric by metric</h2>
+<div id="detail"></div>
+
+<h2>Inputs outside the export</h2>
+<ul>
+  <li>Audio or transcripts, so no word error rate.</li>
+  <li>Time spent in the EHR. The model logs note actions only. Oracle's usage reporting (Lights On Network) is a separate product.</li>
+  <li>A session ID shared with the vendor. The join is on the visit.</li>
+  <li>Survey answers (NASA-TLX, burnout, SUS).</li>
+  <li>An accent column. <code>PERSON.LANGUAGE_DIALECT_CD</code> is the closest thing and is rarely filled.</li>
+</ul>
+<p class="small">The model does have a work-RVU table (<code>PFT_RVU_CONTENT</code>), but only sites that run Oracle's patient accounting load it.</p>
+<p class="small">Sources: the Ambient AI sheet of TE_Framework_Post-Deployment_Cleaned.xlsx, and the Millennium Data Model Reports 2026.1.01 inside single-patient-ehi-export-data-format-specifications.zip, read on 12 Nov 2026. Every table and column name on this page was checked against that model. Statements about which tables sites fill, and about Lights On Network and Clinical AI Agent, come from general Millennium experience, not the model.</p>
+
+</div>
+
+<script>
+const S = { yes: 'Yes', partly: 'Partly', no: 'No' };
+// Formula mini-language: {TABLE.COLUMN} is a column Oracle has, [what you need|where to get it] is not. A line starting with "#" is a plain label.
+const DATA = [
+ { grp: 'Usefulness, usability, efficacy', items: [
+  { id:'doc-time', name:'Documentation Efficiency Improvement', s:'partly', main:'CE_EVENT_PRSNL, CLINICAL_EVENT',
+    what:'Drop in the time clinicians spend on each note after they start using the scribe.',
+    w:'Mean note time per visit before the scribe, minus the mean after, divided by the mean before.',
+    f:'#Metric\n( Before − After ) ÷ Before\n#Before, After = mean note time per visit in the weeks before and after the clinician\'s first scribe visit\n#Note time = sign action minus author action on the same note, both on the open row\n{CE_EVENT_PRSNL.ACTION_DT_TM} where {CE_EVENT_PRSNL.ACTION_TYPE_CD} = sign  −  {CE_EVENT_PRSNL.ACTION_DT_TM} where {CE_EVENT_PRSNL.ACTION_TYPE_CD} = author\n#Time per visit = sum of note times for the notes on one visit\nnotes grouped by {CLINICAL_EVENT.ENCNTR_ID}\n#The spreadsheet definition also wants\n[total EHR time per visit|Oracle usage reporting or the vendor\'s app analytics]   [NASA-TLX workload score|survey]',
+    rows:['CE_EVENT_PRSNL: one row per action on a note (author, sign, cosign, modify), with who did it and when.','CLINICAL_EVENT: one row per version of a note. It carries the visit.','Join on EVENT_ID.'],
+    gaps:['The author-to-sign span includes idle time. A note opened days early inflates it, so start the clock no earlier than the visit date. If the clinician signs the vendor draft straight away, the two actions can share a timestamp and the span is zero.','A rough check is the draft window, CE_DRAFT.CREATE_DT_TM to CE_DRAFT.LAST_MODIFIED_DT_TM, reached through CE_DRAFT_RELTN.EVENT_ID. Drafts may be deleted at signing, so test whether they survive at your site.','Only note time is counted. Chart review, orders and messages are not in the model. Get total EHR time from Oracle usage reporting through your analyst, or from the vendor\'s own time-saved report.','NASA-TLX (a workload survey) comes from a survey tool such as REDCap.','Spreadsheet benchmark: at least a 15% reduction.'] },
+  { id:'tlx', name:'NASA-TLX Change', s:'no', main:'none',
+    what:'Percent change in a workload survey score.',
+    w:'Survey score before minus survey score after, divided by the score before.',
+    f:'#Metric\n( [NASA-TLX before|survey] − [NASA-TLX after|survey] ) ÷ [NASA-TLX before|survey]\n#Oracle only tells you who to survey\ndistinct {CE_EVENT_PRSNL.ACTION_PRSNL_ID} on the sign rows of scribe notes',
+    rows:['CE_EVENT_PRSNL: one row per action on a note. The sign row names the clinician.','PRSNL: one row per staff member, with the name.'],
+    gaps:['The scores. Run the NASA Task Load Index before go-live and again after 8 to 12 weeks, in a survey tool or the vendor\'s in-app survey. Use the export to list who adopted and how often, and who did not.'] },
+  { id:'pfi', name:'Burnout Reduction (Stanford PFI)', s:'no', main:'none',
+    what:'Change in the exhaustion and disengagement part of a burnout survey.',
+    w:'Survey score after minus survey score before, in points on a 5-point scale.',
+    f:'#Metric\n[PFI score after|survey] − [PFI score before|survey]\n#Oracle only tells you who adopted and for how long\nweeks of use = distinct week( {SCH_APPT.BEG_DT_TM} ) of scribe visits per clinician',
+    rows:['SCH_APPT: one row per resource per appointment, with the start time and the visit (ENCNTR_ID).'],
+    gaps:['The scores. The Stanford Professional Fulfillment Index (PFI) is a survey. Measure at baseline and at 24 weeks, the follow-up the trial the spreadsheet cites used. Use the export to split clinicians by how much they used the scribe.'] },
+  { id:'same-day', name:'Same-Day Note Closure Rate', s:'yes', main:'CE_EVENT_PRSNL, SCH_APPT, SCH_EVENT',
+    what:'Share of visits where the note is signed on the day of the visit.',
+    w:'The after-period rate minus the before-period rate, where the rate is visits whose note was signed on the visit date divided by completed visits.',
+    f:'#Metric\nAfter rate − Before rate  (percentage points)\n#Rate = same-day visits ÷ completed visits, in each period\n#Same-day visit = the first completed sign action on its progress note falls on the visit date, both in local time\ndate( {CE_EVENT_PRSNL.ACTION_DT_TM} where {CE_EVENT_PRSNL.ACTION_TYPE_CD} = sign and {CE_EVENT_PRSNL.ACTION_STATUS_CD} = completed ) = date( {SCH_APPT.BEG_DT_TM} )\n#Completed visit = the appointment reached your completed state\n{SCH_EVENT.SCH_MEANING} = your completed state (usually checked out or complete)',
+    rows:['CE_EVENT_PRSNL: one row per action on a note. Take the earliest completed sign row for the note.','SCH_APPT: one row per resource per appointment, with the start time and the visit (ENCNTR_ID).','SCH_EVENT: one row per scheduled appointment, with its state as a fixed 12-character meaning.','Join CE_EVENT_PRSNL to CLINICAL_EVENT on EVENT_ID, then to SCH_APPT on ENCNTR_ID, then to SCH_EVENT on SCH_EVENT_ID.'],
+    gaps:['None from the export. Convert both timestamps to local time first: CE_EVENT_PRSNL has ACTION_TZ, SCH_APPT does not.','Agree the rules before counting: which SCH_MEANING value is "completed" at your site, and whether cosigned counts as closed. Unscheduled visits have no SCH_APPT row, so fall back to ENCOUNTER.ARRIVE_DT_TM for those.','Spreadsheet benchmark: a rise of 5 percentage points.'] },
+ ]},
+ { grp: 'Fairness and bias', items: [
+  { id:'dter', name:'Demographic Transcription Equity Rate', s:'partly', main:'PERSON, PERSON_CODE_VALUE_R',
+    what:'Whether speech recognition is as accurate for every patient group, measured as the worst group\'s accuracy divided by the best group\'s.',
+    w:'Lowest group accuracy divided by highest group accuracy, where accuracy is one minus the word error rate.',
+    f:'#Metric\nmin over groups ( 1 − WER of group ) ÷ max over groups ( 1 − WER of group )\n#WER (word error rate) of group = ( substitutions + deletions + insertions ) ÷ reference words, pooled over the group\'s sessions\n[the four counts per session|vendor, from audio]\n#Groups = patient columns, decoded through CODE_VALUE\n{PERSON.RACE_CD}  or every race in {PERSON_CODE_VALUE_R.CODE_VALUE}   {PERSON.ETHNIC_GRP_CD}   {PERSON.SEX_CD}   age from {PERSON.BIRTH_DT_TM}   {PERSON.LANGUAGE_CD}\n#Key that links Oracle to the vendor\n{ENCOUNTER.ENCNTR_ID}  or  {ENCNTR_ALIAS.ALIAS} (financial number)',
+    rows:['PERSON: one row per patient, with race, ethnicity, sex, birth date and language as code numbers.','PERSON_CODE_VALUE_R: one row per extra pick-list value per patient, for multi-select fields such as race. CODE_SET says which field.','CODE_VALUE: one row per code number, with its label.','ENCNTR_ALIAS: one row per identifier on a visit (financial number, visit number).','Join on PERSON_ID, then CODE_VALUE on the code number.'],
+    gaps:['Word error rate. Audio and transcripts stay with the vendor. Get the four counts per session, pool them within each group, and join to the visit on ENCNTR_ID or the financial number.','Multi-race patients have one value on PERSON and the rest in PERSON_CODE_VALUE_R. Pick a rule for them before grouping.','Oracle records the patient and not who was speaking, so a gap could come from the clinician\'s voice or room noise. If the vendor has no per-session rates there is no stand-in in the model.'] },
+  { id:'dwep', name:'ASR Word Error Parity', s:'partly', main:'PERSON, PERSON_CODE_VALUE_R',
+    what:'Largest gap in word error rate between any two groups.',
+    w:'Largest difference in word error rate between any two patient groups, in percentage points.',
+    f:'#Metric\nmax over pairs of groups | WER of one group − WER of the other |\n#WER (word error rate) of group = ( substitutions + deletions + insertions ) ÷ reference words, pooled over the group\'s sessions\n[the four counts per session|vendor, from audio]\n#Groups and key = same as Demographic Transcription Equity Rate\n{PERSON.RACE_CD}   {PERSON_CODE_VALUE_R.CODE_VALUE}   {PERSON.ETHNIC_GRP_CD}   {PERSON.SEX_CD}   age from {PERSON.BIRTH_DT_TM}   {PERSON.LANGUAGE_CD}   {ENCOUNTER.ENCNTR_ID}',
+    rows:['Same tables as Demographic Transcription Equity Rate.'],
+    gaps:['The four counts, from the vendor. Ask for them per session so you can regroup.','Show the session count behind each group. Groups with few sessions give unstable gaps.','Spreadsheet benchmark: a gap of 0.10 or less.'] },
+  { id:'cdaeg', name:'Gender and Accent Error Gap', s:'partly', main:'PERSON, PERSON_PATIENT',
+    what:'Word error rate gap by gender and by accent.',
+    w:'Largest word error rate difference between gender groups, and separately between accent groups.',
+    f:'#Metric, computed once for gender groups and once for accent groups\nmax over pairs of groups | WER of one group − WER of the other |\n[WER per session|vendor, from audio]\n#Gender groups = patient columns\n{PERSON.SEX_CD}   {PERSON_PATIENT.BIRTH_SEX_CD}   {PERSON.PERSONAL_PRONOUN_CD}\n#Accent groups = the nearest patient columns, plus what Oracle lacks\n{PERSON.LANGUAGE_CD}   {PERSON.LANGUAGE_DIALECT_CD}   {PERSON_PATIENT.INTERP_REQUIRED_CD}   [accent|nowhere in Oracle]   [the clinician\'s own voice|clinician self-report]',
+    rows:['PERSON: one row per patient, with sex, pronouns, language and dialect.','PERSON_PATIENT: one row per patient, with sex assigned at birth and whether an interpreter is needed.','Join on PERSON_ID.'],
+    gaps:['Word error rate, from the vendor per session.','Oracle has no accent column. Language, dialect and the interpreter flag stand in for it. Say so when reporting. Dialect is rarely filled, so check how many patients have it before grouping on it.','PERSON has no gender identity column. Sites often chart it as a clinical event or in social history, so ask your analyst where yours is.','The clinician talks more than the patient. Add a short voluntary clinician survey (first language, region) matched on PRSNL.PERSON_ID, and group by clinician too.'] },
+  { id:'mtr', name:'Medical Term Recall Rate', s:'partly', main:'CE_BLOB, CLINICAL_EVENT',
+    what:'Share of medical terms said in the visit that make it into the note.',
+    w:'Medical terms from the transcript that appear correctly in the signed note, divided by all medical terms in the transcript.',
+    f:'#Metric\n[transcript terms that appear correctly in the note|reviewer] ÷ [medical terms in the transcript|reviewer, from the vendor transcript]\n#The note text comes from Oracle, on the child document event of the scribe note\n{CE_BLOB.BLOB_CONTENTS} where {CLINICAL_EVENT.PARENT_EVENT_ID} = the scribe note\'s EVENT_ID',
+    rows:['CLINICAL_EVENT: one row per version of a note. The child document event points at the parent note.','CE_BLOB: one row per chunk of document text per version, compressed as COMPRESSION_CD says.','Join CE_BLOB to the child event on EVENT_ID.'],
+    gaps:['The transcript, so there is no denominator. Get a transcript export per visit from the vendor and have a reviewer mark medications, procedures and diagnoses in a sample, then check each against the note text.','Oracle has no diagnosis-suggestion table, so there is no acceptance measure like the one on the Epic page.','Your analyst decompresses CE_BLOB before anyone can read it. Documents stored outside the database (CE_BLOB_RESULT.STORAGE_CD) are not in the export.'] },
+ ]},
+ { grp: 'Safety and reliability', items: [
+  { id:'cnser', name:'Clinical Note Safety Error Rate', s:'partly', main:'CLINICAL_EVENT, CE_EVENT_PRSNL',
+    what:'Share of scribe notes with an error that could cause moderate or severe harm.',
+    w:'Sampled scribe notes with a harm-potential error, divided by sampled scribe notes.',
+    f:'#Metric\n[notes with a harm-potential error|clinician review] ÷ sampled scribe notes\n#Scribe notes to sample = current, active progress notes on scribe visits\n{CLINICAL_EVENT.EVENT_ID} where {CLINICAL_EVENT.EVENT_CD} = progress note type, {CLINICAL_EVENT.RECORD_STATUS_CD} = active, {CLINICAL_EVENT.RESULT_STATUS_CD} not in ( in error, cancelled ), {CLINICAL_EVENT.ENCNTR_ID} in scribe visits\n#Warning sign between reviews = notes changed after signing ÷ scribe notes\n{CE_EVENT_PRSNL.CHANGE_SINCE_ACTION_FLAG} = 1 on the sign row',
+    rows:['CLINICAL_EVENT: one row per version of a note. Use the open row.','CE_EVENT_PRSNL: one row per action. The sign row\'s CHANGE_SINCE_ACTION_FLAG is set when the note changed after it was signed.','CE_BLOB: one row per chunk of document text, for the reviewer.','Join on EVENT_ID.'],
+    gaps:['Oracle has no column that says an error happened. Each month, pull a random sample of scribe notes and have two clinicians score them with the harm rubric from the study the spreadsheet cites. Spread the sample across clinicians and note types.','Review the AI draft as well as the signed note, since the signed note already includes the clinician\'s edits. The earliest version of the note is the closest thing to the draft, and only if the vendor writes to Oracle before the clinician edits. Drafts in CE_DRAFT have no text.','Safety event reports are a second source of errors.'] },
+  { id:'csep', name:'Clinically Significant Error Proportion', s:'partly', main:'CLINICAL_EVENT, CE_EVENT_PRSNL',
+    what:'Same as the safety error rate, with a lower bar for what counts as an error.',
+    w:'Sampled scribe notes with a clinically significant error, divided by sampled scribe notes.',
+    f:'#Metric\n[notes with a clinically significant error|clinician review] ÷ sampled scribe notes\n#Warning sign between reviews = notes edited after signing ÷ scribe notes\n{CE_EVENT_PRSNL.ACTION_TYPE_CD} in ( modify, correct ) with {CE_EVENT_PRSNL.ACTION_DT_TM} later than the sign row  or  {CLINICAL_EVENT.RESULT_STATUS_CD} = modified',
+    rows:['Same tables as Clinical Note Safety Error Rate.'],
+    gaps:['Same as the safety error rate: a reviewer has to find each error, with the wider rubric.','Post-sign edits do not count errors. Track them per clinician between reviews and use them to aim the sample.'] },
+  { id:'uasrs', name:'Usability-Adjusted Safety Reliability Score', s:'partly', main:'CE_EVENT_PRSNL, SCH_APPT',
+    what:'A mix of a usability survey (60%) and change in after-hours note work (40%).',
+    w:'0.6 times the usability score, plus 0.4 times the drop in after-hours note work scaled to 0 to 100.',
+    f:'#Metric\n0.6 × [SUS score, 0 to 100|survey] + 0.4 × after-hours reduction scaled 0 to 100\n#After-hours share = note actions outside clinic hours ÷ all note actions, per clinician per week\ncount {CE_EVENT_PRSNL.ACTION_DT_TM} outside 7am to 7pm local (using {CE_EVENT_PRSNL.ACTION_TZ}) or on a weekend\n#Or outside clinic hours = after the clinician\'s last appointment that day\nactions after the last {SCH_APPT.END_DT_TM} of that day, where {SCH_RESOURCE.PERSON_ID} is the clinician and {SCH_RESOURCE.RES_TYPE_FLAG} = 2',
+    rows:['CE_EVENT_PRSNL: one row per action on a note, with a UTC time and a time zone.','SCH_APPT: one row per resource per appointment slot, with start and end.','SCH_RESOURCE: one row per bookable resource. Type 2 is a staff member, and PERSON_ID is their PRSNL id.','Join SCH_APPT to SCH_RESOURCE on RESOURCE_CD.'],
+    gaps:['The SUS (System Usability Scale) survey, through a survey tool.','The spreadsheet does not say how to scale the after-hours drop to 0 to 100. Pick a rule, write it down, and report the two parts separately as well.','Note actions record saves and signs with no duration. Oracle usage reporting has time outside scheduled hours, which matches the published studies better.','The schedule version needs every patient\'s appointments for the day, so it needs the multi-patient export. Drop cancelled appointments by SCH_EVENT.SCH_MEANING.'] },
+  { id:'consent', name:'Consent and Review Compliance', s:'partly', main:'PPR_CONSENT_STATUS, DCP_FORMS_ACTIVITY',
+    what:'Whether patients consented to recording and clinicians reviewed the note.',
+    w:'Scribe visits with a documented consent to record, divided by scribe visits. Review is scored by the sign-off metric.',
+    f:'#Metric\nscribe visits with a consent record ÷ scribe visits\n#Consent record = whichever of these your site uses\n{PPR_CONSENT_STATUS.CONSENT_TYPE_CD} = your recording consent, {PPR_CONSENT_STATUS.STATUS_CD} = given, on the visit\'s {PPR_CONSENT_STATUS.ENCNTR_ID}\n{DCP_FORMS_ACTIVITY.DCP_FORMS_REF_ID} = your recording consent form, {DCP_FORMS_ACTIVITY.FORM_STATUS_CD} = authenticated, on the visit\'s {DCP_FORMS_ACTIVITY.ENCNTR_ID}\n[consent flag per session|vendor app]\n#Review rate = see Clinician Review and Sign-Off Rate',
+    rows:['PPR_CONSENT_STATUS: one row per consent status for a patient, at visit, organisation or patient level, with a type and a status.','DCP_FORMS_ACTIVITY: one row per PowerForm (an on-screen form) filled in, with the form, the visit and a status.','Join on ENCNTR_ID.'],
+    gaps:['Oracle has no standard recording-consent value. Sites use a consent status, a PowerForm, a note phrase or the vendor app. Ask your analyst where yours is, then the formula is a straight ratio. A consent held at patient level (no ENCNTR_ID) counts for every later visit, so check its effective dates.','If consent is verbal and logged in the vendor app, you need the vendor\'s per-session flag joined on the visit.','The spreadsheet\'s source checklist (from the APA) also asks for a written procedure, which is a policy document outside Oracle.'] },
+  { id:'retention', name:'Audio and Transcript Retention', s:'no', main:'none',
+    what:'Whether the vendor deletes audio and transcripts quickly and lets clinicians control it.',
+    w:'Three settings read from the vendor: audio retention period, transcript retention period, and whether a clinician can delete a session.',
+    f:'#Metric = three settings, each a period or a yes/no\n[audio retention period|vendor settings]   [transcript retention period|vendor settings]   [clinician can delete a session|vendor settings]\n#Oracle only proves the visit and note exist\n{ENCOUNTER.ENCNTR_ID}   {CLINICAL_EVENT.EVENT_ID}',
+    rows:['ENCOUNTER: one row per visit.','CLINICAL_EVENT: one row per version of a note.'],
+    gaps:['None of this is in the export. Read the contract and the vendor admin console, then pick a few visits older than the stated period and ask the vendor to confirm the audio is gone.'] },
+ ]},
+ { grp: 'Accountability and privacy', items: [
+  { id:'signoff', name:'Clinician Review and Sign-Off Rate', s:'partly', main:'CE_EVENT_PRSNL, CREDENTIAL',
+    what:'Whether scribe notes must be reviewed and signed by a clinician before they are final, and whether they are.',
+    w:'Signed scribe notes divided by all scribe notes, plus a yes or no on whether the build requires a signature.',
+    f:'#Metric\nsigned scribe notes ÷ all scribe notes\n#Signed = a completed sign or cosign action by a licensed person, on the open row\n{CE_EVENT_PRSNL.ACTION_TYPE_CD} in ( sign, cosign ) and {CE_EVENT_PRSNL.ACTION_STATUS_CD} = completed, where the signer has a {CREDENTIAL.CREDENTIAL_TYPE_CD} = license and a {CREDENTIAL.CREDENTIAL_CD} your site treats as licensed\n#Quick check = the note is authenticated\n{CLINICAL_EVENT.AUTHENTIC_FLAG} = 1\n#Also required: is sign-off enforced\n[note type requires a signature before it is final|Oracle build review]\n#Screening signal = rubber stamp\nsign {CE_EVENT_PRSNL.ACTION_DT_TM} − author {CE_EVENT_PRSNL.ACTION_DT_TM} under 60 seconds',
+    rows:['CE_EVENT_PRSNL: one row per action on a note, with the person, the type and a requested or completed status.','CREDENTIAL: one row per credential per staff member (license, degree, certification).','CLINICAL_EVENT: one row per version of a note. AUTHENTIC_FLAG is 1 once the note is signed.','Join on EVENT_ID, then CREDENTIAL on ACTION_PRSNL_ID = PRSNL_ID.'],
+    gaps:['The build setting that makes a signature mandatory. "Build" means how your site configured the EHR; your analyst reads it from the note type setup.','Credential labels are site-defined. Agree which count as licensed before counting.','A signature does not show the clinician read the note. Treat the under-60-seconds rule as a screening signal only. It also fires on notes signed straight from the vendor draft, where author and sign share a timestamp.'] },
+  { id:'training', name:'Training Data Use Disclosure', s:'no', main:'none',
+    what:'Whether the vendor says if it trains on your data and lets you opt out.',
+    w:'Three answers read from documents: does the vendor train on session data, is it opt-in or opt-out, and can a clinician restrict secondary use.',
+    f:'#Metric = three answers, each a yes/no\n[vendor trains on session data|vendor policy]   [opt-in or opt-out|contract]   [clinician can restrict secondary use|vendor settings]',
+    rows:['None.'],
+    gaps:['None of this is in the export. Read the vendor policy, the contract and the BAA (business associate agreement). Record each answer with the document version and date, since it changes between contract cycles.'] },
+ ]},
+ { grp: 'Financial', items: [
+  { id:'icer', name:'Cost per QALY (ICER)', s:'no', main:'CHARGE (cost side only)',
+    what:'Extra cost per quality-adjusted life year gained. ICER is the incremental cost-effectiveness ratio.',
+    w:'Cost with the scribe minus cost of usual care, divided by QALYs with the scribe minus QALYs of usual care.',
+    f:'#Metric\n( [cost with the scribe|finance] − [cost of usual care|finance] ) ÷ ( [QALYs with the scribe|health economic model] − [QALYs of usual care|model] )\n#Oracle only gives you charges, an input to the cost side\nsum {CHARGE.ITEM_EXTENDED_PRICE} where {CHARGE.CHARGE_TYPE_CD} = debit and {CHARGE.OFFSET_CHARGE_ITEM_ID} is empty',
+    rows:['CHARGE: one row per processed charge, credit or adjustment on a visit. A reversed charge keeps its row and points at the reversal in OFFSET_CHARGE_ITEM_ID.'],
+    gaps:['No EHR records QALYs (quality-adjusted life years). Build the model outside Oracle, with finance cost accounting for the cost side. Charges times a cost-to-charge ratio give part of it.'] },
+  { id:'rvu-pct', name:'Weekly RVU Uplift (%)', s:'partly', main:'CHARGE, CHARGE_MOD',
+    what:'Percent change in billed work RVUs (relative value units) per clinician per week.',
+    w:'Weekly work RVUs per clinician after, minus before, divided by before.',
+    f:'#Metric\n( After − Before ) ÷ Before\n#Before, After = mean weekly work RVUs per clinician in each period\n#Work RVUs for one charge = weight for the code and modifier × units\n[work RVU for the code and modifier|CMS fee schedule file, or PFT_RVU_CONTENT.WORK_RVU_NBR if your site loads it] × {CHARGE.ITEM_QUANTITY}\n#Code and modifier = the charge\'s bill code rows\n{CHARGE_MOD.FIELD2} where {CHARGE_MOD.CHARGE_MOD_TYPE_CD} = bill code and {CHARGE_MOD.FIELD1_ID} = the CPT schedule, and again for the modifier schedule\n#Clinician and week = from the charge\n{CHARGE.PERF_PHYS_ID}   week of {CHARGE.SERVICE_DT_TM}\n#Keep = real, unreversed charges\n{CHARGE.CHARGE_TYPE_CD} = debit   {CHARGE.OFFSET_CHARGE_ITEM_ID} is empty   {CHARGE.PROCESS_FLG} not in ( suspended, skipped, combined, absorbed, offset )',
+    rows:['CHARGE: one row per processed charge. ITEM_QUANTITY is the units, PERF_PHYS_ID the performing clinician.','CHARGE_MOD: one row per bill code or suspense reason on a charge. FIELD1_ID says which code schedule (CPT, HCPCS, modifier) and FIELD2 holds the code itself.','PFT_RVU_CONTENT: one row per CPT code and modifier per effective period, from the CMS file. Empty unless your site runs Oracle patient accounting.','Join CHARGE_MOD on CHARGE_ITEM_ID. If PFT_RVU_CONTENT is loaded, join it on SOURCE_TXT = the code and MOD_TXT = the modifier, with the service date inside its effective dates and RVU_FLAG = 0.'],
+    gaps:['The RVU weight. Oracle\'s model has a table for it, but most sites bill in another system and leave it empty. The public CMS (Medicare) fee schedule file is the safe default.','Modifiers 26 and TC (the professional and technical parts of a code) change the RVU. Their rows are in CHARGE_MOD under the modifier schedule.','The last two or three weeks are incomplete because those charges are not processed yet.'] },
+  { id:'enc-vol', name:'Weekly Encounter Volume Uplift (%)', s:'yes', main:'SCH_EVENT, SCH_APPT, SCH_RESOURCE',
+    what:'Percent change in completed visits per clinician per week.',
+    w:'Completed visits per clinician per week after, minus before, divided by before.',
+    f:'#Metric\n( After − Before ) ÷ Before\n#Before, After = mean completed visits per clinician per week in each period\n#Completed visits per clinician per week = appointments that reached your completed state\ncount {SCH_EVENT.SCH_EVENT_ID} where {SCH_EVENT.SCH_MEANING} = your completed state, grouped by the clinician {SCH_RESOURCE.PERSON_ID} ( {SCH_RESOURCE.RES_TYPE_FLAG} = 2 ) and week of {SCH_APPT.BEG_DT_TM}\n#Split by specialty\n{PRSNL_SPECIALTY_RELTN.SPECIALTY_CD}',
+    rows:['SCH_EVENT: one row per scheduled appointment, with its state.','SCH_APPT: one row per resource per appointment. Keep the clinician\'s row and the current version (open END_EFFECTIVE_DT_TM).','SCH_RESOURCE: one row per bookable resource. Type 2 is a staff member.','PRSNL_SPECIALTY_RELTN: one row per specialty per staff member. PRIMARY_IND marks the main one.','Join SCH_APPT to SCH_EVENT on SCH_EVENT_ID and to SCH_RESOURCE on RESOURCE_CD.'],
+    gaps:['None from the export. Confirm which SCH_MEANING value means completed at your site.','Counting visits from ENCOUNTER instead undercounts recurring outpatient series, where one ENCNTR_ID spans many visits, and many clinic visits are never marked discharged. Appointments are the safer count.','Spreadsheet benchmark: the study it cites found a 2.8% rise.'] },
+  { id:'rvu-abs', name:'RVU Change per Physician-Week', s:'partly', main:'CHARGE, CHARGE_MOD',
+    what:'Change in weekly work RVUs per clinician, as a number instead of a percent.',
+    w:'Weekly work RVUs per clinician after, minus before.',
+    f:'#Metric\nAfter − Before\n#Before, After = mean weekly work RVUs per clinician in each period, built exactly as in Weekly RVU Uplift\n[work RVU for the code and modifier|CMS fee schedule file] × {CHARGE.ITEM_QUANTITY} , code from {CHARGE_MOD.FIELD2}',
+    rows:['Same tables as Weekly RVU Uplift.'],
+    gaps:['Same gaps and checks as Weekly RVU Uplift.','Spreadsheet benchmark: 1.81 RVUs per physician-week.'] },
+  { id:'ehr-min', name:'Documentation Time Reduction (min/day)', s:'partly', main:'CE_EVENT_PRSNL',
+    what:'Minutes per day less spent in the EHR.',
+    w:'Median note minutes per clinician per day before, minus the median after.',
+    f:'#Metric\nmedian Before − median After\n#Before, After = note minutes per clinician per local day in each period\n#Note minutes per day = sum of author-to-sign spans for the notes the clinician signed that day\nsum of ( sign {CE_EVENT_PRSNL.ACTION_DT_TM} − author {CE_EVENT_PRSNL.ACTION_DT_TM} ) grouped by {CE_EVENT_PRSNL.ACTION_PRSNL_ID} on the sign row\n#The spreadsheet definition is\n[total EHR minutes per day|Oracle usage reporting]',
+    rows:['CE_EVENT_PRSNL: one row per action on a note, with the person and the time.'],
+    gaps:['The span includes idle time, so it overstates. Cap each note at a fixed hour to reduce the overcount, and label the result "note open time".','Total EHR time. Messages, orders and chart review are not in the model, so get them from Oracle usage reporting. The study the spreadsheet cites measured total EHR time, so your number is not comparable with it.','Spreadsheet benchmark: 19.95 minutes per day, measured as total EHR time.'] },
+ ]},
+];
+
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const mono = s => esc(s).replace(/\b([A-Z][A-Z0-9_]{3,})\b/g, '<code>$1</code>');
+const chips = s => esc(s)
+  .replace(/\{([A-Z][A-Z0-9_]*)\.([A-Z][A-Z0-9_]*)\}/g, '<span class="v"><span class="tb">$1</span>$2</span>')
+  .replace(/\[([^\]|]+)\|([^\]]+)\]/g, '<span class="x"><span>$1</span><span class="src">$2</span></span>');
+const formula = s => s.split('\n').map(l => l.startsWith('#') ? `<span class="ln"><span class="t">${esc(l.slice(1))}</span></span>` : `<span class="ln">${chips(l)}</span><span class="br"></span>`).join('');
+const sum = document.getElementById('summary');
+const det = document.getElementById('detail');
+const all = DATA.flatMap(g => g.items);
+const n = k => all.filter(m => m.s === k).length;
+document.getElementById('counts').textContent = `${n('yes')} are yes, ${n('partly')} partly and ${n('no')} no`;
+DATA.forEach(g => {
+  sum.insertAdjacentHTML('beforeend', `<tr class="grp"><td colspan="3">${esc(g.grp)}</td></tr>`);
+  det.insertAdjacentHTML('beforeend', `<h2>${esc(g.grp)}</h2>`);
+  g.items.forEach(m => {
+    sum.insertAdjacentHTML('beforeend', `<tr><td><a href="#${m.id}">${esc(m.name)}</a></td><td><span class="status ${m.s}">${S[m.s]}</span></td><td>${mono(m.main)}</td></tr>`);
+    det.insertAdjacentHTML('beforeend', `
+      <div class="m" id="${m.id}">
+        <h3>${esc(m.name)}</h3>
+        <div class="top"><span class="status ${m.s}">${S[m.s]}</span><span>${esc(m.what)}</span></div>
+        <dl>
+          <dt>In words</dt><dd class="w">${esc(m.w)}</dd>
+          <dt>With columns</dt><dd class="wide"><div class="f">${formula(m.f)}</div></dd>
+          <dt>What a row is</dt><dd><ul>${m.rows.map(x => `<li>${mono(x)}</li>`).join('')}</ul></dd>
+          <dt>Gaps and checks</dt><dd><ul>${m.gaps.map(x => `<li>${mono(x)}</li>`).join('')}</ul></dd>
+        </dl>
+      </div>`);
+  });
+});
+</script>
+</body>
+</html>

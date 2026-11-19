@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Clinical Decision Support Metrics in the athenahealth Export</title>
+<meta name="description" content="Each CHAI clinical decision support metric as a plain formula, with the athenahealth FHIR EHI export resource and element behind every variable and the pieces the export does not have.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* One reading column. Summary table first, then one card per metric. Every card has the same parts in the same order. */
+:root {
+  --bg: #ffffff; --fg: #1c1c1c; --fg-2: #555555; --fg-3: #8a8a8a;
+  --line: #dddddd; --line-2: #efefef; --f-bg: #f7f7f5;
+  --accent: #1f4e79; --yes: #2e7d32; --partly: #c77d00; --no: #9e9e9e;
+  --miss: #b3261e; --miss-bg: #fff6f5; --part-bg: #fff9ee; --mono-fg: #333333;
+  --sans: 'Atkinson Hyperlegible', 'Segoe UI', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161616; --fg: #e8e8e8; --fg-2: #b0b0b0; --fg-3: #7a7a7a; --line: #333333; --line-2: #262626; --f-bg: #1d1d1d;
+    --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --part-bg: #2a2416; --mono-fg: #cfcfcf;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161616; --fg: #e8e8e8; --fg-2: #b0b0b0; --fg-3: #7a7a7a; --line: #333333; --line-2: #262626; --f-bg: #1d1d1d;
+  --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --part-bg: #2a2416; --mono-fg: #cfcfcf;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { font-family: var(--sans); background: var(--bg); color: var(--fg); font-size: 16px; line-height: 1.55; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.page { max-width: 920px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 48px 64px; }
+h1 { font-size: 30px; line-height: 1.2; font-weight: 700; margin-bottom: 14px; text-wrap: balance; }
+h2 { font-size: 21px; font-weight: 700; margin: 44px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+h3 { font-size: 18px; font-weight: 700; margin: 34px 0 4px; }
+p { margin-bottom: 12px; max-width: 70ch; text-wrap: pretty; }
+p.small, li.small { font-size: 14px; color: var(--fg-2); }
+ul { padding-left: 20px; margin-bottom: 12px; max-width: 70ch; }
+li { margin-bottom: 5px; }
+code { font-family: var(--mono); font-size: .86em; color: var(--mono-fg); overflow-wrap: anywhere; }
+.status { font-weight: 700; white-space: nowrap; }
+.status::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: var(--c); transform: translateY(-1px); }
+.yes { --c: var(--yes); } .partly { --c: var(--partly); } .no { --c: var(--no); }
+.tbl-wrap { overflow-x: auto; margin: 12px 0 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th { text-align: left; font-size: 13px; color: var(--fg-2); font-weight: 700; padding: 6px 10px 6px 0; border-bottom: 2px solid var(--fg); }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+tr.grp td { padding-top: 16px; font-weight: 700; color: var(--fg-2); font-size: 13px; border-bottom: 0; }
+td a { color: inherit; text-decoration: none; }
+td a:hover { text-decoration: underline; }
+
+/* Definition boxes in the intro. */
+.words { display: grid; grid-template-columns: var(--dtw, 90px) minmax(0, 1fr); gap: 7px 14px; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; margin: 10px 0 16px; font-size: 14.5px; max-width: 78ch; }
+.words dt { font-weight: 700; }
+.words.parts { --dtw: 150px; }
+.words.gloss { --dtw: 150px; }
+
+/* A variable. Solid = in the export. Amber dashed = partly. Red dashed = not in the export. */
+.tok { display: inline-block; padding: 0 6px; border: 1px solid var(--fg-3); border-radius: 4px; background: var(--bg); line-height: 1.45; font-size: .94em; }
+.tok.p { border: 1.5px dashed var(--partly); background: var(--part-bg); }
+.tok.g { border: 1.5px dashed var(--miss); background: var(--miss-bg); }
+
+/* Source lines. Solid chip = a column in the export, table on top. Red dashed box = not in the export, with where to get it. */
+.f { padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--f-bg); font-size: 13.5px; color: var(--fg); }
+.f .ln { line-height: 2.75; padding: 3px 0; }
+.f .ln + .ln { border-top: 1px solid var(--line); }
+.f .ln.more { border-top: 0; padding-top: 0; padding-left: 18px; }
+.f .is { color: var(--fg-3); margin: 0 3px; }
+.f .lab { color: var(--fg-2); font-size: 12.5px; }
+.f .sep { font-size: 12.5px; color: var(--fg-2); font-weight: 700; padding: 9px 0 0; border-top: 1px solid var(--line); line-height: 1.4; }
+.f .sep + .ln { border-top: 0; }
+.f .v, .f .x { display: inline-flex; flex-direction: column; vertical-align: middle; line-height: 1.35; max-width: 100%; overflow-wrap: anywhere; padding: 3px 7px 4px; border-radius: 4px; }
+.f .v { border: 1px solid var(--line); background: var(--bg); color: var(--mono-fg); font-family: var(--mono); font-size: 13px; font-weight: 500; text-decoration: none; }
+.f a.v:hover { border-color: var(--accent); }
+.f .v .tb { font-size: 10.5px; font-weight: 400; color: var(--fg-3); letter-spacing: .02em; }
+.f .v .tb::after { content: " resource"; font-family: var(--sans); }
+.f .x { border: 1.5px dashed var(--miss); background: var(--miss-bg); font-size: 13px; }
+.f .x .src { font-size: 10.5px; color: var(--miss); font-weight: 700; }
+.f .x .src::before { content: "not in athena · get from "; font-weight: 400; }
+.legend-f { display: inline-block; padding: 0; border: 0; background: none; vertical-align: middle; }
+
+/* A card. */
+.m { padding: 4px 0 22px; border-bottom: 1px solid var(--line-2); scroll-margin-top: 20px; }
+.m .top { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 12px; }
+.m dl { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px 14px; font-size: 15px; }
+.m dt { color: var(--fg-3); font-size: 13px; padding-top: 2px; }
+.m dd { min-width: 0; max-width: 78ch; }
+.m dd.wide { max-width: none; }
+.m dd ul { margin: 0; padding-left: 18px; max-width: none; }
+.m dd ul li { font-size: 14.5px; margin-bottom: 4px; }
+.m dd ul.gaps { list-style: none; padding-left: 0; }
+.m dd ul.gaps li { margin-bottom: 9px; }
+.m dd ul.gaps .gv { margin-bottom: 2px; }
+.m dd dl.vars { grid-template-columns: max-content minmax(0, 1fr); gap: 7px 12px; font-size: 14.5px; }
+.m dd dl.vars dt { color: inherit; font-size: inherit; padding-top: 0; max-width: 240px; }
+.f .ln.fx { font-size: 15px; line-height: 2.1; padding: 5px 0; }
+.f .ln.wr { line-height: 2.5; }
+.f .grp { display: inline-flex; flex-direction: column; vertical-align: middle; margin: 4px 3px; padding: 2px 7px 5px; border: 1px solid var(--fg-3); border-radius: 6px; background: var(--bg); max-width: 100%; font-size: 13.5px; line-height: 2; }
+.f .grp.p { border: 1.5px dashed var(--partly); background: var(--part-bg); }
+.f .grp.g { border: 1.5px dashed var(--miss); background: var(--miss-bg); }
+.f .grp.g .x { border: 0; background: none; padding: 0; }
+.f .grp .gl { font-size: 11.5px; font-weight: 700; color: var(--fg-2); line-height: 1.6; }
+.f .rd { display: block; }
+.f .v .rw { font-family: var(--sans); font-size: 10.5px; font-weight: 400; color: var(--fg-3); max-width: 190px; overflow-wrap: break-word; }
+.f .grp .v, .f .grp .x { margin: 2px 0; }
+.m dl.sheet { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; margin-bottom: 16px; grid-template-columns: 98px minmax(0, 1fr); gap: 8px 14px; font-size: 14.5px; color: var(--fg-2); }
+.m dl.sheet dd { white-space: pre-line; }
+.m .eq { font-size: 15.5px; line-height: 2.05; }
+.m .eq div + div { font-size: 14.5px; color: var(--fg-2); }
+.m .none { color: var(--fg-2); font-size: 14.5px; }
+@media (max-width: 600px) {
+  .m dl, .m dl.sheet, .m dd dl.vars { grid-template-columns: 1fr; gap: 2px 0; }
+  .m dd dl.vars dt { margin-top: 6px; }
+  .m dt { margin-top: 10px; }
+  .words { grid-template-columns: 1fr; gap: 2px 0; }
+  .words dd { margin-bottom: 8px; }
+}
+.nav { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 28px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.nav.use { margin-bottom: 10px; }
+.nav .lbl { color: var(--fg-3); }
+.nav a { color: var(--fg-2); text-decoration: none; padding-bottom: 2px; border-bottom: 2px solid transparent; }
+.nav a:hover { color: var(--fg); border-bottom-color: var(--line); }
+.nav a[aria-current="page"] { color: var(--fg); font-weight: 700; border-bottom-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+<nav class="nav use" aria-label="Use case"><span class="lbl">Use case:</span><a href="athena.html">Ambient AI</a><a href="pi-athena.html">Program Integrity</a><a href="cds-athena.html" aria-current="page">Clinical Decision Support</a></nav>
+<nav class="nav" aria-label="EHR system"><span class="lbl">Clinical Decision Support metrics in the EHI export of:</span><a href="cds.html">Epic</a><a href="cds-oracle.html">Oracle Health</a><a href="cds-athena.html" aria-current="page">athenahealth</a></nav>
+
+<h1>Can athenahealth's EHI export score the clinical decision support metrics?</h1>
+<p>The framework spreadsheet lists 15 methods and metrics for AI clinical decision support (CDS). This page writes each one as a formula in plain words, then shows which athenahealth FHIR EHI export resource and element supplies each piece of it. Pieces the export does not have are marked in red, with where to get them.</p>
+<p>Of the 15 metrics, <span id="counts"></span>. Partly means the export has some of the inputs, such as the patient groups or the records a reviewer reads, and a reviewer, a survey or the vendor supplies the rest.</p>
+<p class="small">The same 15 cards exist for <a href="cds.html">Epic</a> and <a href="cds-oracle.html">Oracle Health</a>. The formula and the variables are the same on all three pages, and only the sources change.</p>
+
+<h2>Resource, record and element</h2>
+<dl class="words"><dt>Resource</dt><dd>One file in the export, like one tab of a spreadsheet. The Epic and Oracle pages call this a table. <code>MedicationStatement</code> is the file of entries on patients' medication lists.</dd><dt>Record</dt><dd>One JSON object in that file, like a spreadsheet row. In <code>MedicationStatement</code> one record is one medicine on one patient's list. In <code>Patient</code> one record is one patient.</dd><dt>Element</dt><dd>One named value in a record, like a spreadsheet column. <code>AllergyIntolerance.code</code> is the substance the patient is allergic to. Nested names are joined with dots, and a name after a colon, like <code>Patient.extension:USCORERACE</code>, is one named entry under that element.</dd></dl>
+<p class="small">Most formulas count records, so each card says what one record stands for in every resource it uses, and each chip in a formula repeats it.</p>
+
+<h2>How to read a card</h2>
+<p>Each metric has one card, and every card has the same parts in the same order.</p>
+<dl class="words parts">
+  <dt>Description, Intended use, Benchmark</dt><dd>Copied word for word from the spreadsheet.</dd>
+  <dt>Formula</dt><dd>The metric as an equation in plain words. Each boxed word is a variable.</dd>
+  <dt>Variables</dt><dd>What each boxed word means.</dd>
+  <dt>In athena</dt><dd>The same formula again, with each variable swapped for the data behind it. <span class="f legend-f"><span class="v"><span class="tb">MedicationStatement</span>dosage.text<span class="rw">one record per entry on a patient's medication list</span></span></span> reads: the element <code>dosage.text</code>, from the resource <code>MedicationStatement</code>, where there is one record per entry on a patient's medication list. <span class="f legend-f"><span class="x"><span>what you still need</span><span class="src">its source</span></span></span> is something the export does not have, with where to get it. Under the formula, "Which records count" says which records of each resource go in. Click a chip to open that resource's profile page.</dd>
+  <dt>Resources and records</dt><dd>What one record of each resource stands for, and how the resources join.</dd>
+  <dt>Gaps</dt><dd>Each variable the export does not have, and how to get it.</dd>
+  <dt>Checks</dt><dd>What to confirm in your own export before you trust the number.</dd>
+</dl>
+<p>The box around a variable shows where it stands. <span class="tok">Visits</span> is in the export. <span class="tok p">Note time</span> is partly there: the export has a stand-in or part of the answer, and the rest comes from somewhere else. <span class="tok g">Survey score</span> is not in the export.</p>
+<p>The status beside each metric's name follows from those boxes. Yes means every variable is in the export. Partly means some are, or the export has a stand-in. No means none are. Some cards end the In athena part with "Also in the export". Those are elements that help but sit outside the formula, and they do not change the status.</p>
+<p class="small">Every rate and percent change comes out as a fraction. 0.05 is 5 percent, or 5 percentage points when it is the gap between two rates. Count each case once. If the bottom of a fraction is zero, report N/A.</p>
+
+<h2>How to read the athena docs</h2>
+<ul class="small">
+  <li class="small">Each resource has a profile page (StructureDefinition-athena-&lt;name&gt;-profile) listing its elements and allowed codes, and a Mappings tab naming the athenaPractice or athenaFlow table and column each element comes from. The Mappings tab is the place to settle what a field means.</li>
+  <li class="small">Every chart document becomes an <code>Encounter</code>. The Encounter page says each physician interaction results in a chart document, and the resource is built from the DOCUMENT table. So phone notes, refill notes and result notes are Encounters too, and some athenaPractice visits also produce a second Encounter from the PatientVisit table. Keep visit document types only (<code>Encounter.type:DOCTYPE</code>) or require an <code>Encounter.appointment</code>, and count appointments rather than Encounters where you can.</li>
+  <li class="small"><code>DocumentReference.context.encounter</code> points at the Encounter built from the same DOCUMENT row. <code>DocumentReference.authenticator</code> and <code>Encounter.extension:AUTHENTICATOR</code> are both the document's signer. The extension's slice is misspelled "AUNTHENTICATOR" on the profile page, so match it by its URL.</li>
+  <li class="small">Documents are versioned. <code>docStatus</code> is preliminary, final, amended or entered-in-error. In base FHIR an amendment is a new record whose <code>relatesTo.code</code> is "replaces" and whose target becomes "superseded", and an addendum is a new record with "appends". The athena pages map these from internal codes without saying how, so verify on one known amended note and one known addendum. Drop entered-in-error records everywhere.</li>
+  <li class="small">Note text is an attachment under <code>DocumentReference.content</code>. The mappings build every attachment as a <code>Binary</code> record, so expect to fetch Binary rather than find inline text.</li>
+  <li class="small">Two timestamps matter and only one is explained. <code>DocumentReference.date</code> comes from the DOCUMENT row's WHENCREATED column, the time that version was created. <code>DocumentReference.extension:pubtime</code> comes from its PUBTIME column, and the docs do not say whether that is the signing time or a filing time. Check it against a few notes whose history you know before using it as the sign time.</li>
+  <li class="small">References are IDs. <code>DocumentReference.authenticator</code> points at a <code>Practitioner</code> record, which has the name and NPI (the national provider identifier). Practitioner records come from different source tables for clinical and billing data, so one clinician may have two IDs. Join on NPI when crossing from notes to charges.</li>
+  <li class="small">The export is requested per group (Group $export): all patients, the patients whose responsible provider is one practitioner, or the patients whose home location is one site. Use the all-patients group, since a provider's visits include other providers' panel patients. The date filter (_since) returns only records changed after a date, so the before period needs a full pull.</li>
+  <li class="small">Billing resources (<code>Charge</code>, <code>Claim</code>, <code>Payment</code>) exist only for athenaPractice. athenaFlow sites have no charges in the export. <code>Charge</code> is a custom logical model, not a standard FHIR resource.</li>
+</ul>
+
+
+<h2>The resources that matter here</h2><ul><li><code>Patient</code> and <code>Coverage</code>: race, ethnicity, gender and birth date for patient groups, and the insurance carrier type for an insurance group.</li><li><code>MedicationStatement</code>, <code>AllergyIntolerance</code> and <code>Condition</code>: the medication list, allergies and problems a pharmacist or reviewer reads beside the tool's output.</li><li><code>DocumentReference</code> and <code>Binary</code>: the notes, with the text stored as an attachment.</li><li><code>Practitioner</code>: one record per clinician, with the name and NPI, for matching the tool's users.</li></ul><h2>Where the AI shows up</h2><ul><li>The export has no record of an alert, a recommendation or a call to a decision support tool. The EHI export page lists no resource for them.</li><li>The <code>MedicationRequest</code> profile shows <code>detectedIssue</code> and <code>eventHistory</code>, but its Mappings tab gives them no source, so expect them empty.</li><li><code>AuditEvent</code> has a profile page but is not on the EHI export list, so the export has no user activity log.</li><li>Get the tool's own log from the vendor: each output with the patient, the user, the time and the visit. Match it on <code>Patient.id</code>, <code>Practitioner.id</code> or <code>Encounter.id</code>.</li></ul>
+
+<h2>Words every card uses</h2>
+<dl class="words gloss"><dt>Tool output</dt><dd>One answer, alert, summary or piece of advice the decision support tool gave. Only the vendor's log has them.</dd><dt>Vendor log</dt><dd>The tool's own record of what it was asked, what it said and when, kept by the vendor outside athena.</dd><dt>Stand-in</dt><dd>A rougher measure the export can give when the real input is missing. Label any result built on it an estimate.</dd><dt>Before, After</dt><dd>Fixed periods before and after the AI went live.</dd></dl>
+
+<h2>Summary</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th scope="col">Metric</th><th scope="col">From the export?</th><th scope="col">Main resources</th></tr></thead>
+  <tbody id="summary"></tbody>
+</table>
+</div>
+
+<h2>Metric by metric</h2>
+<div id="detail"></div>
+
+<h2>Inputs outside the export</h2><ul><li>The tool's outputs, flags, citations and response times, from the vendor's log.</li><li>Judgments by clinicians, pharmacists and reviewers: guideline match, made-up facts, DRPs, ratings and chart checks.</li><li>Survey answers (TAM, Mini Z, mental effort).</li><li>Time in the EHR and click logs. Ask your athenahealth account team for usage reports, and the vendor for its clickstream.</li><li>Developer test sets with known right answers, XAI results, vignette tests and focus group records.</li></ul><p class="small">Sources: the CDS - Methods and Metrics sheet of TE_Framework_Post-Deployment_Cleaned.xlsx, and the athenahealth FHIR R4 implementation guide v27.0.0 at docs.mydata.athenahealth.com/fhir-r4 (the EHI export page, and the profile and mappings pages for each resource used), read on 18 Nov 2026.</p>
+
+</div>
+<script>
+// Card data. Source lines use a small notation: {TABLE.COLUMN} is in the export, [what you need|where to get it] is not, and `Name` is a variable.
+const CFG = {
+ "link": "athena",
+ "pages": {
+  "Encounter": "encounter",
+  "DocumentReference": "documentref",
+  "Patient": "patient",
+  "Practitioner": "practitioner",
+  "PractitionerRole": "practitionerrole",
+  "Appointment": "appointment",
+  "Charge": "charge",
+  "Consent": "consent",
+  "Provenance": "provenance",
+  "Binary": "binary",
+  "Account": "account",
+  "Adjustment": "adjustment",
+  "AllergyIntolerance": "allergy",
+  "AuditEvent": "auditevent",
+  "CarePlan": "careplan",
+  "Claim": "claim",
+  "ClinicalImpression": "clinicalimpressn",
+  "Collection": "collection",
+  "Condition": "condition",
+  "Coverage": "coverage",
+  "Deductible": "deductible",
+  "Device": "device",
+  "DiagnosticReport": "diagnosticreport",
+  "Eligibility": "eligibility",
+  "Goal": "goal",
+  "Immunization": "immunization",
+  "List": "list",
+  "Media": "media",
+  "Medication": "medication",
+  "MedicationAdministration": "medicationadmin",
+  "MedicationDispense": "meddispense",
+  "MedicationRequest": "medrequest",
+  "MedicationStatement": "medstatement",
+  "Observation": "observation",
+  "Organization": "organization",
+  "Payment": "payment",
+  "Posting": "posting",
+  "Procedure": "procedure",
+  "ServiceRequest": "servicerequest"
+ },
+ "names": [
+  "MedicationStatement",
+  "AllergyIntolerance",
+  "MedicationRequest",
+  "DocumentReference",
+  "PractitionerRole",
+  "Practitioner",
+  "Observation",
+  "Appointment",
+  "Provenance",
+  "Condition",
+  "Encounter",
+  "Coverage",
+  "Patient",
+  "Consent",
+  "Charge",
+  "Binary"
+ ],
+ "inLabel": "In athena",
+ "rowWord": "record",
+ "rowsLabel": "Resources and records"
+};
+const DATA = [
+ {
+  "grp": "Usefulness, usability, efficacy",
+  "items": [
+   {
+    "id": "cds-accuracy",
+    "name": "CDS Output Accuracy",
+    "row": 3,
+    "s": "partly",
+    "main": "MedicationStatement",
+    "eq": [
+     "No arithmetic. Report the three results, each worked out on its own card: `Concordance results`, `DRP detection results` and `Hallucination and speed results`."
+    ],
+    "vars": [
+     {
+      "n": "Concordance results",
+      "d": "The share of outputs that match guidelines and the share of citations that check out, from the Evidence Concordance and Citations card.",
+      "x": "[concordance and citation results|Evidence Concordance and Citations card]"
+     },
+     {
+      "n": "DRP detection results",
+      "d": "The scores for finding drug-related problems (DRPs), such as a wrong dose, from the DRP Detection Accuracy card.",
+      "x": "[precision, recall and F1|DRP Detection Accuracy card]",
+      "w": "scored by a pharmacist on the medication lists in {MedicationStatement.extension:rxnorm} that the DRP Detection Accuracy card builds"
+     },
+     {
+      "n": "Hallucination and speed results",
+      "d": "The share of outputs with made-up facts and the time to answer, from the Hallucination Rate and Response Time card.",
+      "x": "[hallucination rate and response time|Hallucination Rate and Response Time card]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "MedicationStatement: one record per entry on a patient's medication list. extension:rxnorm is the drug's RxNorm code."
+    ],
+    "gaps": [
+     {
+      "v": "Concordance results, DRP detection results, Hallucination and speed results",
+      "t": "Each result comes from its own card, which lists what it needs. Work out the three for the same period and the same version of the tool."
+     }
+    ],
+    "checks": [
+     "Report the three results side by side. The spreadsheet gives no rule for combining them into one score."
+    ],
+    "sheet": "CDS Output Accuracy & Concordance (Evidence Concordance, Citation Accuracy, Guideline Alignment, Hallucination Rate, DRP Detection, Response Time)",
+    "desc": "Measures how well AI-supported CDS produce guideline-consistent, evidence-based, and clinically safe outputs, while minimizing hallucinations and ensuring verifiable citations. Encompasses detection of specific medication safety issues (e.g., Drug-Related Problems) and the efficiency of generating accurate recommendations or summaries.",
+    "use": "Validates the usefulness and operational readiness of CDS outputs by assessing correctness, guideline alignment, source verifiability, and speed. Applicable to CDS tasks such as surgical planning, medication reviews, discharge instructions, documentation, and triage guidance.",
+    "bench": "Evidence Concordance / Citation Accuracy / Output Relevance: ≥90% evidence concordance with specialty guidelines, 100% verifiable citations, <5% hallucinations.\n\nDRP Detection Accuracy: RAG-LLM + pharmacist achieved higher F1 and accuracy than LLM alone in detecting moderate/severe DRPs across 12 specialties, with improved severe DRP identification and some precision tradeoff. \n\nGuideline Concordance / Hallucination Rate / Response Time: GPT-4 RAG achieved 96.4% accuracy vs. 86.6% clinicians, 0% hallucinations, ~20 sec output vs. ~10 mins human."
+   },
+   {
+    "id": "concordance",
+    "name": "Evidence Concordance and Citations",
+    "row": 4,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Concordance = `Outputs matching guidelines` ÷ `Outputs reviewed`",
+     "Citation accuracy = `Citations verified` ÷ `Citations given`"
+    ],
+    "vars": [
+     {
+      "n": "Outputs matching guidelines",
+      "d": "`Outputs reviewed` whose advice agrees with current specialty guidelines and the evidence they rest on.",
+      "x": "count [outputs a clinician marks as matching current guidelines|clinician review]",
+      "w": "among the `Outputs reviewed`"
+     },
+     {
+      "n": "Outputs reviewed",
+      "d": "Answers or advice from the decision support tool that clinicians checked and scored.",
+      "x": "count [the tool's answers|vendor log or test set]"
+     },
+     {
+      "n": "Citations verified",
+      "d": "`Citations given` that a reviewer could find and that say what the tool claims they say.",
+      "x": "count [citations a reviewer finds and confirms|clinician review]",
+      "w": "among the `Citations given`"
+     },
+     {
+      "n": "Citations given",
+      "d": "The sources the tool cites in the `Outputs reviewed`, such as a guideline or a journal article.",
+      "x": "count [sources cited in each output|clinician review]",
+      "w": "in the `Outputs reviewed`"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Patient facts for the reviewer",
+      "x": "{Condition.code}, {MedicationStatement.extension:rxnorm} and {AllergyIntolerance.code} for the patient each output is about"
+     }
+    ],
+    "rows": [
+     "Condition: one record per problem or diagnosis on a patient's chart.",
+     "MedicationStatement: one record per entry on a patient's medication list. extension:rxnorm is the drug's RxNorm code.",
+     "AllergyIntolerance: one record per allergy on a patient's chart.",
+     "Join Condition.subject, MedicationStatement.subject and AllergyIntolerance.patient to the patient in the tool's log."
+    ],
+    "gaps": [
+     {
+      "v": "Outputs matching guidelines",
+      "t": "athena holds no review scores. Clinicians in the specialty score each sampled output yes or no against the current guideline, using a written rubric."
+     },
+     {
+      "v": "Outputs reviewed",
+      "t": "The export does not hold the tool's outputs. Use the vendor's log, with patient, visit and time, or before go-live, the developer's test set."
+     },
+     {
+      "v": "Citations verified, Citations given",
+      "t": "A reviewer looks up each source a sampled output cites and marks whether it says what the output claims."
+     }
+    ],
+    "checks": [
+     "Pick the sample before anyone reads the outputs, and spread it across specialties and users.",
+     "Score each output against the guideline version that was current when the tool gave it."
+    ],
+    "sheet": "Evidence Concordance, Citation Accuracy, and Guideline Alignment",
+    "desc": "Measures how well CDS outputs align with specialty guidelines and reference evidence while ensuring that all cited sources are verifiable and correctly attributed. Evaluates factual alignment, reference traceability, and the percentage of outputs meeting specialty-specific evidence standards.",
+    "use": "Ensures the clinical validity and trustworthiness of AI-supported CDS recommendations, confirming they adhere to accepted medical guidelines and evidence hierarchies.",
+    "bench": "≥ 90 % evidence concordance with specialty guidelines, 100 % verifiable citations, < 5 % hallucinations in reference-linked outputs. |"
+   },
+   {
+    "id": "drp",
+    "name": "DRP Detection Accuracy",
+    "row": 5,
+    "s": "partly",
+    "main": "MedicationStatement, AllergyIntolerance, Condition",
+    "eq": [
+     "F1 = 2 × `Precision` × `Recall` ÷ ( `Precision` + `Recall` ), one score that is high only when both are high",
+     "Precision = `DRPs found correctly` ÷ `DRPs flagged`",
+     "Recall = `DRPs found correctly` ÷ `DRPs a pharmacist found`"
+    ],
+    "vars": [
+     {
+      "n": "DRPs found correctly",
+      "d": "`DRPs flagged` that match one of the `DRPs a pharmacist found`."
+     },
+     {
+      "n": "DRPs flagged",
+      "d": "Drug-related problems (DRPs) the tool flagged, such as a harmful drug mix or a wrong dose.",
+      "x": "count [DRPs the tool flagged|vendor log or test set]"
+     },
+     {
+      "n": "DRPs a pharmacist found",
+      "d": "The DRPs a pharmacist found in the same medication lists the tool checked. They count as the right answers.",
+      "x": "count [DRPs a pharmacist finds|pharmacist review]",
+      "w": "in the lists the tool checked: {MedicationStatement.extension:rxnorm} and {MedicationStatement.dosage.text} on entries whose effective period covers the check date, read with {AllergyIntolerance.code} and {Condition.code}"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "MedicationStatement: one record per entry on a patient's medication list. Its effective period runs from the start date to the stop date.",
+     "AllergyIntolerance: one record per allergy on a patient's chart.",
+     "Condition: one record per problem or diagnosis on a patient's chart.",
+     "Join MedicationStatement.subject, AllergyIntolerance.patient and Condition.subject to the patient the tool checked."
+    ],
+    "gaps": [
+     {
+      "v": "DRPs a pharmacist found",
+      "t": "A pharmacist reviews the same medication lists without seeing the tool's flags and records each DRP. Then they match each flag to that list, using a written rule."
+     },
+     {
+      "v": "DRPs flagged",
+      "t": "The export does not hold the tool's flags. Use the vendor's log, with patient, drug and time, or before go-live, the developer's test set."
+     }
+    ],
+    "checks": [
+     "The tool read the list at one moment. Rebuild it as of that time, or ask the vendor for the exact list it saw.",
+     "Decide before scoring when a flag matches a pharmacist's DRP: same medicines and same problem type, or the medicines alone.",
+     "MedicationStatement.id comes from a group id, and each record has a meta.versionId. If an id repeats, keep the version in effect on the check date."
+    ],
+    "sheet": "DRP Detection Accuracy",
+    "desc": "Measures the ability of CDS models to detect and classify Drug-Related Problems (DRPs) such as adverse drug interactions, contraindications, or incorrect dosages in medication guidance tasks. Evaluates precision, recall, and F1-score relative to pharmacist-verified ground truth.",
+    "use": "Validates the clinical safety and medication-management reliability of AI-generated CDS outputs by ensuring accurate identification of DRPs during real-time decision support.",
+    "bench": "RAG-LLM + pharmacist workflow achieved higher F1 and accuracy than LLM alone across 12 specialties, improving severe DRP identification with minimal precision trade-off."
+   },
+   {
+    "id": "halluc",
+    "name": "Hallucination Rate and Response Time",
+    "row": 6,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Hallucination rate = `Outputs with made-up facts` ÷ `Outputs reviewed`",
+     "Response time = the average `Seconds to answer`, set beside the `Human review time` for the same task"
+    ],
+    "vars": [
+     {
+      "n": "Outputs with made-up facts",
+      "d": "`Outputs reviewed` with at least one claim their sources do not back up, such as an invented study or dose.",
+      "x": "count [outputs with a claim their sources do not back up|clinician review]",
+      "w": "among the `Outputs reviewed`"
+     },
+     {
+      "n": "Outputs reviewed",
+      "d": "Answers or advice from the decision support tool that clinicians checked and scored.",
+      "x": "count [the tool's answers|vendor log or test set]"
+     },
+     {
+      "n": "Seconds to answer",
+      "d": "Seconds from a user's request to the tool's full answer, for one of the `Outputs reviewed`.",
+      "x": "[seconds from request to full answer|vendor log]"
+     },
+     {
+      "n": "Human review time",
+      "d": "The average minutes a clinician takes to do the same task without the tool.",
+      "x": "[minutes a clinician takes without the tool|timed test]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Chart to check a summary against",
+      "x": "{DocumentReference.content.attachment}, fetched as {Binary.data}, for the patient and visit the summary covers"
+     }
+    ],
+    "rows": [
+     "DocumentReference: one record per document version. content.attachment points at the note text.",
+     "Binary: one record per stored file. data holds the file, base64 encoded.",
+     "Join the attachment URL to Binary.id."
+    ],
+    "gaps": [
+     {
+      "v": "Outputs with made-up facts",
+      "t": "athena holds no review scores. Clinicians check each claim in the sampled outputs against its sources, or the chart for a summary, and mark any output with an unsupported claim."
+     },
+     {
+      "v": "Outputs reviewed",
+      "t": "The export does not hold the tool's outputs. Use the vendor's log, with patient, visit and time, or before go-live, the developer's test set."
+     },
+     {
+      "v": "Seconds to answer",
+      "t": "Ask the vendor for the request and full answer times of each output."
+     },
+     {
+      "v": "Human review time",
+      "t": "Time clinicians doing the same tasks on the same cases without the tool, with a stopwatch or a screen recording."
+     }
+    ],
+    "checks": [
+     "The description asks for the time to an accurate answer. Report response time for the outputs reviewers scored as correct."
+    ],
+    "sheet": "Hallucination Rate and Response Time",
+    "desc": "Measures the factual reliability and latency of CDS responses generated by LLMs. Quantifies hallucination frequency in clinical summaries or recommendations and the average time to produce accurate, guideline-consistent outputs.",
+    "use": "Confirms operational readiness and efficiency of CDS systems in clinical workflows by ensuring low hallucination rates and acceptable generation latency relative to human review.",
+    "bench": "GPT-4 RAG achieved 96.4 % accuracy vs 86.6 % clinicians, 0 % hallucinations, and ~20 s average output time compared to ~10 min human review."
+   },
+   {
+    "id": "tam",
+    "name": "TAM Survey",
+    "row": 7,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Usefulness = the median `Usefulness rating` across clinicians",
+     "Ease of use = the median `Ease of use rating` across clinicians"
+    ],
+    "vars": [
+     {
+      "n": "Usefulness rating",
+      "d": "One clinician's average answer, from 1 to 7, to the Technology Acceptance Model (TAM) questions on how useful the tool is.",
+      "x": "[TAM usefulness answers, 1 to 7|survey]"
+     },
+     {
+      "n": "Ease of use rating",
+      "d": "The same clinician's average answer, from 1 to 7, to the TAM questions on how easy the tool is to use.",
+      "x": "[TAM ease of use answers, 1 to 7|survey]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Who to survey",
+      "x": "{Practitioner.name} of each user in the tool's log, matched on {Practitioner.identifier:NPI}"
+     }
+    ],
+    "rows": [
+     "Practitioner: one record per clinician. It has the name and NPI."
+    ],
+    "gaps": [
+     {
+      "v": "Usefulness rating, Ease of use rating",
+      "t": "athena does not hold survey answers. In a survey tool, give clinicians the TAM questions, scored 1 to 7, after they have worked with the tool. Average each person's answers."
+     }
+    ],
+    "checks": [
+     "The study the spreadsheet cites tested the tool on simulated charts. Say whether your clinicians used simulated charts or real patients.",
+     "Report the median with the number of clinicians who answered."
+    ],
+    "sheet": "Technology Acceptance Model (TAM) Survey",
+    "desc": "Captures clinician-reported usability and ease of use of a preventive care CDS tool after interaction with simulated patient charts.",
+    "use": "To assess perceived usability and acceptance of AI tools in clinical workflows. Supports evaluation of AI system adoption and trust, transferable to CDS tools used in triage, risk alerts, or chronic disease management.",
+    "bench": "Median scores: 7/7 for both usefulness and usability"
+   },
+   {
+    "id": "review-time",
+    "name": "Medication Review Time",
+    "row": 8,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Time saved = `Early median` − `Later median`",
+     "Review minutes = `Last click` − `First click`, for one medication review"
+    ],
+    "vars": [
+     {
+      "n": "Early median",
+      "d": "The middle `Review minutes` across each user's first few reviews with the tool. Decide how many count as first before looking at the data."
+     },
+     {
+      "n": "Later median",
+      "d": "The middle `Review minutes` across the same users' later reviews."
+     },
+     {
+      "n": "Last click",
+      "d": "The time of the user's last click on the review, from the tool's click log (clickstream).",
+      "x": "[time of the last click on the review|tool click log]"
+     },
+     {
+      "n": "First click",
+      "d": "The time of the user's first click on the same review.",
+      "x": "[time of the first click on the review|tool click log]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Last click, First click",
+      "t": "The export has no click log. Ask the vendor for the tool's clickstream: every click with its time, the user and the review."
+     }
+    ],
+    "checks": [
+     "Set a cutoff for idle gaps between clicks, so a review left open and finished later does not count as one long review.",
+     "The study the spreadsheet cites fitted a linear mixed model, which allows for each user's own pace. A plain difference of medians does not."
+    ],
+    "sheet": "Time to complete medication reviews (in minutes) using clickstream data and linear mixed models",
+    "desc": "This study evaluated whether physicians and pharmacists performing decision-supported medication reviews became more efficient over time with experience using the STRIP Assistant (a CDSS web tool). It was a longitudinal analysis within a randomized controlled trial in the Netherlands.",
+    "use": "Intended to measure how user experience with the CDSS improves task efficiency, showing that familiarity can reduce time costs; this metric (task completion time) could apply to other AI systems evaluating user learning curves, adoption, or interface design.",
+    "bench": "Early median review time: 20.4 min (SD 9.0); later median review time: 9.8 min (SD 6.1); F(31.145)=14.043, p<.001."
+   },
+   {
+    "id": "pajama",
+    "name": "Pajama Time",
+    "row": 9,
+    "s": "partly",
+    "main": "DocumentReference, Appointment",
+    "eq": [
+     "Drop = ( `Minutes before` − `Minutes after` ) ÷ `Minutes before`"
+    ],
+    "vars": [
+     {
+      "n": "Minutes before",
+      "d": "The average `After-hours minutes` per clinician day, before the tool went live."
+     },
+     {
+      "n": "Minutes after",
+      "d": "The average `After-hours minutes` per clinician day, once the same clinicians use the tool."
+     },
+     {
+      "n": "After-hours minutes",
+      "d": "Minutes one clinician spends in the electronic health record (EHR) outside scheduled clinic hours on one day.",
+      "x": "[minutes in the EHR outside scheduled clinic hours|athenahealth usage reports]",
+      "alt": "share of notes with {DocumentReference.extension:pubtime} after hours",
+      "altw": "Notes one {DocumentReference.authenticator} finished that day, first version with {DocumentReference.docStatus} = final. After hours means a weekend, outside 7am to 7pm local, or after their last {Appointment.end}."
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "DocumentReference: one record per document version. authenticator is the signer.",
+     "Appointment: one record per booked slot. participant:Practitioner.actor is the clinician.",
+     "Join DocumentReference.authenticator to Appointment.participant:Practitioner.actor."
+    ],
+    "gaps": [
+     {
+      "v": "After-hours minutes",
+      "t": "Each note has one publish time, which shows when it was finished and not how long it took. Ask your athenahealth account team for usage reports of after-hours time."
+     }
+    ],
+    "checks": [
+     "The docs do not say whether pubtime is the signing time or a filing time. Check it on a few notes whose history you know.",
+     "The stand-in gives a share and no minutes. It leaves out orders, messages and chart review done after hours.",
+     "Use the same clinicians before and after, and compare them with clinicians in the same specialty who do not use the tool."
+    ],
+    "sheet": "Pajama Time",
+    "desc": "Time spent in the EHR outside of scheduled clinic hours. Measured to assess after-hours documentation burden following AI-supported CDS adoption.",
+    "use": "To determine if AI documentation tools reduce after-hours work and support clinician work-life balance. Relevant for CDS systems integrated into workflows where delayed documentation is common, such as longitudinal care or complex case reviews.",
+    "bench": "Reduction from ≥90 to <30 mins/day (MGB); 48–60% drop reported in pilots (Abridge)"
+   },
+   {
+    "id": "cog-load",
+    "name": "Cognitive Load",
+    "row": 10,
+    "s": "partly",
+    "main": "DocumentReference, Binary",
+    "eq": [
+     "Drop = ( `Load before` − `Load after` ) ÷ `Load before`",
+     "Note retention = `Draft words kept` ÷ `Draft words`"
+    ],
+    "vars": [
+     {
+      "n": "Load before",
+      "d": "The average `Load score` before the tool went live."
+     },
+     {
+      "n": "Load after",
+      "d": "The average `Load score` from the same clinicians once they use the tool."
+     },
+     {
+      "n": "Load score",
+      "d": "One clinician's answer to a survey question on how much mental effort documentation takes. Ask the same question on the same scale both times.",
+      "x": "[answer to the mental effort question|survey]"
+     },
+     {
+      "n": "Draft words kept",
+      "d": "Words from the AI draft note that are still there when the clinician signs it.",
+      "x": "count [draft words still in the signed note|vendor draft, compared by script]",
+      "w": "compared with the signed note: the first version with {DocumentReference.docStatus} = final, its text in {DocumentReference.content.attachment}, fetched as {Binary.data}"
+     },
+     {
+      "n": "Draft words",
+      "d": "All the words in the same AI draft notes, as first written.",
+      "x": "[words in the AI draft as first written|vendor draft]",
+      "alt": "count of words in {Binary.data}",
+      "altw": "the note's first version, when it has {DocumentReference.docStatus} = preliminary, fetched through {DocumentReference.content.attachment}"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "DocumentReference: one record per document version. content.attachment points at the note text.",
+     "Binary: one record per stored file. data holds the file, base64 encoded.",
+     "Join the attachment URL to Binary.id."
+    ],
+    "gaps": [
+     {
+      "v": "Load score",
+      "t": "athena does not hold survey answers. Ask the same clinicians the same mental effort question, on the same scale, before go-live and again once they use the tool."
+     },
+     {
+      "v": "Draft words kept",
+      "t": "A script lines up each AI draft with its signed note and counts the draft words still there."
+     },
+     {
+      "v": "Draft words",
+      "t": "Ask the vendor for each AI draft as first written, with its Encounter.id. If the tool files a preliminary version that a later one replaces, that version is the stand-in."
+     }
+    ],
+    "checks": [
+     "The spreadsheet's figures come from ambient scribes. For a tool that drafts no notes, report the load score alone.",
+     "Count words the same way on both sides, with the same handling of headings, punctuation and numbers.",
+     "Attachments may be PDF or RTF files. Convert them to text before counting."
+    ],
+    "sheet": "Cognitive Load",
+    "desc": "Measured reduction in mental effort required for documentation using ambient scribe, based on self-reported feedback and note retention rates.",
+    "use": "To evaluate how AI tools reduce the mental burden of clinical documentation. Supports CDS systems aiming to streamline information processing and reduce fatigue in cognitively demanding workflows like guideline review or complex case synthesis",
+    "bench": "61% decrease in cognitive load (Corewell); 80% of AI-generated note retained (Yale)"
+   },
+   {
+    "id": "mini-z",
+    "name": "Burnout (Mini Z)",
+    "row": 11,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Reduction = ( `Rate before` − `Rate after` ) ÷ `Rate before`",
+     "Rate = `Clinicians burned out` ÷ `Clinicians surveyed`"
+    ],
+    "vars": [
+     {
+      "n": "Rate before",
+      "d": "The `Rate` from the survey given before the tool went live."
+     },
+     {
+      "n": "Rate after",
+      "d": "The `Rate` from the same survey once clinicians use the tool."
+     },
+     {
+      "n": "Clinicians burned out",
+      "d": "`Clinicians surveyed` who pick 3 or higher on the Mini Z burnout question. Answers run from 1 (no burnout) to 5 (completely burned out).",
+      "x": "count [clinicians who pick 3 or higher|survey]",
+      "w": "among the `Clinicians surveyed`"
+     },
+     {
+      "n": "Clinicians surveyed",
+      "d": "Clinicians who answered the Mini Z, a short survey on work stress and burnout.",
+      "x": "count [clinicians who answered the Mini Z|survey]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Who to survey",
+      "x": "{Practitioner.name} of each user in the tool's log, matched on {Practitioner.identifier:NPI}"
+     }
+    ],
+    "rows": [
+     "Practitioner: one record per clinician. It has the name and NPI."
+    ],
+    "gaps": [
+     {
+      "v": "Clinicians burned out, Clinicians surveyed",
+      "t": "athena does not hold survey answers. In a survey tool, give the same clinicians the Mini Z before go-live and again once they use the tool."
+     }
+    ],
+    "checks": [
+     "Compare the same clinicians both times. A change in who answers can move the rate on its own.",
+     "Report how many clinicians were asked and how many answered, both times."
+    ],
+    "sheet": "Burnout (Mini Z survey)",
+    "desc": "Survey-based measurement of clinician burnout following ambient scribe adoption.",
+    "use": "To validate whether AI documentation support reduces clinician strain in high-volume settings. Supports CDS tools that aim to alleviate cognitive and emotional workload in time-pressured clinical workflows like preventive care or triage.",
+    "bench": "40% reduction in burnout (MGB); 63% reduction (MultiCare)"
+   }
+  ]
+ },
+ {
+  "grp": "Fairness and bias",
+  "items": [
+   {
+    "id": "subgroup",
+    "name": "Subgroup Performance and XAI",
+    "row": 13,
+    "s": "partly",
+    "main": "Patient, Coverage",
+    "eq": [
+     "Largest gap = `Highest error rate` − `Lowest error rate`",
+     "Error rate = `Wrong outputs` ÷ `Cases scored`, for one `Patient group`",
+     "Explanation = the `Error drivers` an explainable AI (XAI) method finds for the groups with the largest gaps"
+    ],
+    "vars": [
+     {
+      "n": "Highest error rate",
+      "d": "The highest `Error rate` of any `Patient group` within one trait."
+     },
+     {
+      "n": "Lowest error rate",
+      "d": "The lowest `Error rate` of any `Patient group` within one trait."
+     },
+     {
+      "n": "Wrong outputs",
+      "d": "`Cases scored` where the tool's output disagrees with the known right answer.",
+      "x": "count [cases where the output disagrees with the known right answer|developer test results]",
+      "w": "among the `Cases scored`"
+     },
+     {
+      "n": "Cases scored",
+      "d": "Past patient cases with a known right answer that the tool was run on, for people in the `Patient group`.",
+      "x": "count [past cases with a known right answer, run through the tool|developer test set]"
+     },
+     {
+      "n": "Patient group",
+      "d": "Patients who share one value of a trait such as age band, sex or gender, race, ethnicity or insurance. Compare groups within one trait.",
+      "x": "age band from {Patient.birthDate}, {Patient.gender}, {Patient.extension:USCORERACE}, {Patient.extension:USCOREETHNICITY} or {Coverage.type}",
+      "w": "Match each case to its patient on {Patient.id}. Insurance is the {Coverage.type} on the record whose {Coverage.beneficiary} is that patient and whose {Coverage.period} covers the case date."
+     },
+     {
+      "n": "Error drivers",
+      "d": "The patient details that the XAI method says push the tool most toward its mistakes in that group.",
+      "x": "[patient details the XAI method ranks highest|developer's XAI output]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Patient: one record per patient. Race and ethnicity are named entries under extension, in the format set by US Core, the national US FHIR profile.",
+     "Coverage: one record per insurance plan on a patient's file. type is the insurance carrier type your site set up.",
+     "Join Coverage.beneficiary to Patient.id."
+    ],
+    "gaps": [
+     {
+      "v": "Wrong outputs, Cases scored",
+      "t": "Before go-live, the developer runs the tool on past cases from your patients with a known right answer, and returns each result with its Patient.id."
+     },
+     {
+      "v": "Error drivers",
+      "t": "Ask the developer to run an XAI method, such as FairLens in the study the spreadsheet cites, on the groups with the largest gaps and share what it finds."
+     }
+    ],
+    "checks": [
+     "Map Coverage.type, your site's carrier types, to groups such as Medicare, Medicaid, commercial and self-pay. Pick a rule for patients with several plans or none.",
+     "The race extension can hold several categories for one patient. Pick a rule for patients with more than one race and use it throughout.",
+     "Set age bands before counting, using age on the case date. Show the number of cases per group. A small group gives an unstable rate."
+    ],
+    "sheet": "Stratified Subgroup Performance + eXplainable AI (XAI)",
+    "desc": "FairLens audits black-box CDS using subgroup error rates across age, gender, ethnicity, insurance, then provides explainable insights into bias patterns",
+    "use": "To systematically detect and explain performance disparities across protected groups before deployment. Subgroup error analysis combined with XAI enables corrective interventions, and this method can be replicated in any CDS system to preemptively flag biased model behavior.",
+    "bench": "Stratified audit feasibility demonstrated; no explicit numeric thresholds but tool identifies biased subgroups for expert review ."
+   },
+   {
+    "id": "tpr",
+    "name": "TPR Disparity",
+    "row": 14,
+    "s": "partly",
+    "main": "Patient, Coverage",
+    "eq": [
+     "TPR disparity = `Group TPR` − `Reference TPR`, for one condition",
+     "TPR = `Cases caught` ÷ `Cases with the condition`, for one `Patient group`"
+    ],
+    "vars": [
+     {
+      "n": "Group TPR",
+      "d": "The `TPR` for the `Patient group` you are checking. TPR, the true positive rate, is the share of real cases the tool catches."
+     },
+     {
+      "n": "Reference TPR",
+      "d": "The middle `TPR` of all groups in the same trait. For a trait with two groups, such as sex, use the other group's `TPR`."
+     },
+     {
+      "n": "Cases caught",
+      "d": "`Cases with the condition` that the tool said have it.",
+      "x": "count [cases the tool says have the condition|developer test results]",
+      "w": "among the `Cases with the condition`"
+     },
+     {
+      "n": "Cases with the condition",
+      "d": "Cases in the `Patient group` where the condition is really there, going by the known right answer.",
+      "x": "count [cases where the known right answer shows the condition|labelled test set]"
+     },
+     {
+      "n": "Patient group",
+      "d": "Patients who share one value of a trait such as age band, sex or gender, race, ethnicity or insurance. Compare groups within one trait.",
+      "x": "age band from {Patient.birthDate}, {Patient.gender}, {Patient.extension:USCORERACE}, {Patient.extension:USCOREETHNICITY} or {Coverage.type}",
+      "w": "Match each case to its patient on {Patient.id}. Insurance is the {Coverage.type} on the record whose {Coverage.beneficiary} is that patient and whose {Coverage.period} covers the case date."
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Patient: one record per patient. Race and ethnicity are named entries under extension, in the format set by US Core, the national US FHIR profile.",
+     "Coverage: one record per insurance plan on a patient's file. type is the insurance carrier type your site set up.",
+     "Join Coverage.beneficiary to Patient.id."
+    ],
+    "gaps": [
+     {
+      "v": "Cases caught, Cases with the condition",
+      "t": "Before go-live, the developer runs the tool on past cases from your patients with a known right answer, such as a radiologist's read, and returns each result with its Patient.id."
+     }
+    ],
+    "checks": [
+     "Map Coverage.type, your site's carrier types, to groups such as Medicare, Medicaid, commercial and self-pay. Pick a rule for patients with several plans or none.",
+     "The race extension can hold several categories for one patient. Pick a rule for patients with more than one race and use it throughout.",
+     "Set age bands before counting, using age on the case date. Show the number of cases per group. A small group gives an unstable rate."
+    ],
+    "sheet": "True Positive Rate (TPR) Disparity Analysis",
+    "desc": "CheXclusion evaluated deep chest X-ray classifiers across age, race, sex, and insurance; measured differences in TPR to assess bias .",
+    "use": "TPR disparity is used to quantify fairness in diagnostic models. Measuring subgroup-specific TPR guides training interventions such as data balancing or re‑weighting. This metric applies to any image‑based CDS to ensure equitable sensitivity across demographics.",
+    "bench": "Demonstrated significant TPR disparities in all datasets; multi-source training reduced but didn’t eliminate gaps ."
+   },
+   {
+    "id": "qa-accuracy",
+    "name": "Subgroup QA Accuracy",
+    "row": 15,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Accuracy gap = `Highest accuracy` − `Lowest accuracy`, for one model and one `Prompt style`",
+     "Accuracy = `Answers correct` ÷ `Questions asked`, for one `Patient group`"
+    ],
+    "vars": [
+     {
+      "n": "Highest accuracy",
+      "d": "The highest `Accuracy` of any `Patient group` within one trait."
+     },
+     {
+      "n": "Lowest accuracy",
+      "d": "The lowest `Accuracy` of any `Patient group` within one trait."
+     },
+     {
+      "n": "Prompt style",
+      "d": "How the question is put to the model, such as asking it to reason step by step before it answers.",
+      "x": "[how each question is put to the model|test protocol]"
+     },
+     {
+      "n": "Answers correct",
+      "d": "`Questions asked` that the model answered correctly, judged against the case's answer key.",
+      "x": "count [answers that match the answer key|reviewer]",
+      "w": "among the `Questions asked`"
+     },
+     {
+      "n": "Questions asked",
+      "d": "Questions about short written patient cases, asked with only the patient's race, age or gender changed to match the `Patient group`.",
+      "x": "count [vignette questions asked of the model|test set]"
+     },
+     {
+      "n": "Patient group",
+      "d": "Patients who share one value of a trait such as age band, sex or gender, race, ethnicity or insurance. Compare groups within one trait.",
+      "x": "[race, age or gender written into each vignette|test set]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Prompt style, Answers correct, Questions asked, Patient group",
+      "t": "This test uses written cases, so nothing comes from athena. The developer writes each case once, changes only the race, age or gender, and asks it in each prompt style."
+     }
+    ],
+    "checks": [
+     "Use the same vignettes and the same correct answers for every model and prompt style."
+    ],
+    "sheet": "Subgroup QA Accuracy across Sensitive Attributes",
+    "desc": "Evaluated 8 LLMs on 3 clinical QA vignettes varying race/age/gender; compared accuracy/language use across subgroups and prompt designs .",
+    "use": "Subgroup-based accuracy combined with prompt/bias sensitivity offers a template for evaluating fairness in LLM-powered CDS. It highlights which prompting styles and models minimize bias and can be used to tune clinical LLM outputs in any decision-support context.",
+    "bench": "Significant bias variations across models and prompts; chain-of-thought prompting reduced subgroup disparities ."
+   }
+  ]
+ },
+ {
+  "grp": "Safety and reliability",
+  "items": [
+   {
+    "id": "hitl",
+    "name": "Human-in-the-Loop Evaluation",
+    "row": 17,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Share rated yes = `Outputs rated yes` ÷ `Outputs reviewed`, for each `Rated dimension`",
+     "Reviewer agreement = `Ratings that matched` ÷ `Ratings compared`"
+    ],
+    "vars": [
+     {
+      "n": "Outputs rated yes",
+      "d": "`Outputs reviewed` whose final, agreed rating is yes for that `Rated dimension`.",
+      "x": "count [outputs whose agreed rating is yes|clinician review]",
+      "w": "among the `Outputs reviewed`, for one `Rated dimension`"
+     },
+     {
+      "n": "Outputs reviewed",
+      "d": "Answers or advice from the decision support tool that clinicians checked and scored.",
+      "x": "count [the tool's answers|vendor log or test set]"
+     },
+     {
+      "n": "Rated dimension",
+      "d": "One of five questions each output is rated on: helpful, understood the question, factually correct, complete, could cause harm. For harm, lower is better.",
+      "x": "[the five rating questions|review protocol]"
+     },
+     {
+      "n": "Ratings that matched",
+      "d": "`Ratings compared` where the first two reviewers gave the same answer.",
+      "x": "count [ratings where the first two reviewers agree|clinician review]",
+      "w": "among the `Ratings compared`"
+     },
+     {
+      "n": "Ratings compared",
+      "d": "Cases where the first two reviewers rated the same output on the same `Rated dimension`, before any tie breaker.",
+      "x": "count [the first two reviewers' ratings of one output|clinician review]",
+      "w": "on the `Outputs reviewed`, one per `Rated dimension`"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Outputs rated yes, Rated dimension, Ratings that matched, Ratings compared",
+      "t": "athena holds no review scores. Two board-certified clinicians rate each sampled output on the five questions, using a written rubric, and a third breaks ties. Keep the first two ratings."
+     },
+     {
+      "v": "Outputs reviewed",
+      "t": "The export does not hold the tool's outputs. Use the vendor's log, with patient, visit and time, or before go-live, the developer's test set."
+     }
+    ],
+    "checks": [
+     "The study the spreadsheet cites mixed real user questions with benchmark and expert-written questions. Say which kinds your sample holds."
+    ],
+    "sheet": "Multidimensional Human-in-the-Loop Evaluation (Helpfulness, Comprehension, Correctness, Completeness, Clinical Harmfulness)",
+    "desc": "This study developed and demonstrated a reproducible framework for evaluating generative AI in health care. The framework was applied to ClinicalKey AI, a retrieval-augmented generation (RAG) tool, across 426 query-response pairs from real user logs, a benchmark dataset, and SME-created queries. Board-certified clinicians scored responses on helpfulness, query comprehension, factual correctness, completeness, and potential harm, with multi-reviewer consensus and tie-breaker methods.",
+    "use": "This multidimensional framework is intended to bridge the gap between purely automated evaluation (e.g., BLEU or ROUGE) and human-centered, safety-critical evaluation of medical AI systems. The metrics target the most pressing questions for deploying generative AI in health: Is it helpful to the clinician? Does it correctly understand medical questions? Is the information factually accurate? Does it fully answer the question? Could it harm patients if blindly followed? These dimensions are highly transferable to other AI systems beyond question-answering-such as AI-generated discharge summaries, education materials, or even radiology reports-since any clinical AI output must address (1) usability and perceived helpfulness, (2) correct comprehension of medical context, (3) factual accuracy, (4) comprehensiveness, and (5) potential to cause harm. The rigorous SME-in-the-loop, consensus-driven scoring and reproducible process is particularly valuable for standard-setting in regulated environments where patient safety and clinical validity cannot rely solely on automated metrics. The methodology supports scalable yet clinically grounded oversight of generative AI tools in other specialties, other languages, or even public-facing consumer health applications.",
+    "bench": "94.4% of responses rated helpful; 95.5% factually correct; 98.6% query comprehension; 90.9% completeness; 0.47% potentially harmful responses (with detailed severity breakdowns); agreement between first two SMEs in 60.6% of evaluations"
+   },
+   {
+    "id": "requirements",
+    "name": "Stakeholder Requirements",
+    "row": 18,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "No arithmetic. The assessment is three answers: `Who took part`, `Requirements found` and `Requirements met`."
+    ],
+    "vars": [
+     {
+      "n": "Who took part",
+      "d": "The clinicians, engineers and developers in the focus groups, which are guided group talks, and how many of each.",
+      "x": "[participants by role, and how many|focus group records]"
+     },
+     {
+      "n": "Requirements found",
+      "d": "The needs the focus groups agreed the tool must meet, such as checking whether a guideline applies to this patient.",
+      "x": "[requirements the focus groups agreed on|focus group notes]"
+     },
+     {
+      "n": "Requirements met",
+      "d": "For each of the `Requirements found`, whether the built tool meets it.",
+      "x": "[yes or no for each requirement|design review]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Who took part, Requirements found",
+      "t": "Focus groups meet before the tool is built, so none of this is in the export. Keep the attendance list and the requirements the groups agreed on."
+     },
+     {
+      "v": "Requirements met",
+      "t": "Check the built tool against each requirement and record yes or no. This export, FHIR R4 with one JSON record per line, can test raw data access and FHIR-based interoperability."
+     }
+    ],
+    "checks": [],
+    "sheet": "Multistakeholder Requirements Analysis",
+    "desc": "Focus groups with clinicians, engineers, and developers to identify core system needs for guideline adherence monitoring.",
+    "use": "To ensure CDS tools meet the operational and safety needs of real-world clinical environments before deployment. Captures design requirements-like recommendation applicability and raw data access-that are essential for building systems that not only surface guidance but can act on it reliably. Transferable to other guideline-based domains (e.g., oncology, cardiology) that require dynamic integration of evolving recommendations into patient-level decision logic.",
+    "bench": "Identified 4 functional requirements: recommendation applicability, data integration, raw data access, and FHIR-based interoperability."
+   },
+   {
+    "id": "prototype",
+    "name": "Prototype Test on Patient Data",
+    "row": 19,
+    "s": "partly",
+    "main": "Condition, Observation, MedicationRequest, DocumentReference",
+    "eq": [
+     "Agreement = `Calls a clinician confirms` ÷ `Adherence calls`"
+    ],
+    "vars": [
+     {
+      "n": "Calls a clinician confirms",
+      "d": "`Adherence calls` that match what a clinician finds by reading the same patient record.",
+      "x": "count [calls a clinician confirms by reading the record|chart review]",
+      "w": "among the `Adherence calls`, read against the same patient's problems in {Condition.code}, results in {Observation.code} and {Observation.value[x]}, orders in {MedicationRequest.extension:rxnorm} and notes in {DocumentReference.content.attachment}"
+     },
+     {
+      "n": "Adherence calls",
+      "d": "The tool's yes or no answers, on real patient records, to whether a guideline step applied and whether care followed it.",
+      "x": "count [the tool's yes or no answers|vendor log]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Condition: one record per problem or diagnosis on a patient's chart.",
+     "Observation: one record per result or measurement. code is what was measured and value[x] is the result.",
+     "MedicationRequest: one record per prescription or medication order.",
+     "DocumentReference: one record per document version. content.attachment points at the note text.",
+     "Join Condition.subject, Observation.subject, MedicationRequest.subject and DocumentReference.subject to the patient in the tool's log."
+    ],
+    "gaps": [
+     {
+      "v": "Calls a clinician confirms",
+      "t": "A clinician reads each sampled record without seeing the tool's answer, decides whether the guideline step applied and whether care followed it, and compares that with the tool's call."
+     },
+     {
+      "v": "Adherence calls",
+      "t": "The export does not hold the tool's answers. Ask the vendor for each call with the patient, the guideline step, the date and both answers."
+     }
+    ],
+    "checks": [
+     "Pick the patients before the tool runs, such as all patients with the condition in one month. The tool's answers must not pick them.",
+     "Read the chart as it stood on the call date. Later results and notes can change the right answer.",
+     "Count a call as confirmed only when both answers match: whether the step applied, and whether care followed it."
+    ],
+    "sheet": "Prototype Testing with Real Patient Data",
+    "desc": "Evaluation of a modular guideline adherence system using real COVID-19 patient records to verify decision-support performance.",
+    "use": "To validate whether AI systems can go beyond passive display of guidelines and actively assess their relevance and implementation at the point of care. Demonstrates how guideline-driven CDS can become executable and personalized when tightly linked to structured EHR data. This type of evaluation supports broader application to any specialty where care quality depends on real-time guideline adherence, such as sepsis management, stroke protocols, or cancer staging workflows.",
+    "bench": "Demonstrated feasibility of real-time guideline adherence checks; clinical outcome impact pending future studies."
+   }
+  ]
+ }
+];
+
+const S = { yes: 'Yes', partly: 'Partly', no: 'No' };
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// Where a variable stands: ok = in the export, p = partly, g = not in the export.
+// A variable takes on the sources of every variable its definition or source line names.
+function kinds(m) {
+  const info = {};
+  const refs = s => [...s.matchAll(/`([^`]+)`/g)].map(a => a[1]);
+  m.vars.forEach(v => {
+    const src = [v.x, v.w, v.alt, v.altw].filter(Boolean).join(' ');
+    const own = new Set();
+    if (/\{[A-Za-z][A-Za-z0-9_]*\./.test(src)) own.add('e');
+    if (/\[[^\]|]+\|/.test(src)) own.add('g');
+    info[v.n] = { own, refs: new Set(refs(v.d + ' ' + src)) };
+  });
+  m.eq.forEach(line => {
+    const i = line.indexOf(' = ');
+    if (i < 0) return;
+    const lhs = line.slice(0, i).trim();
+    info[lhs] = info[lhs] || { own: new Set(), refs: new Set() };
+    refs(line.slice(i + 3)).forEach(r => info[lhs].refs.add(r));
+  });
+  const walk = (n, seen) => {
+    if (!info[n] || seen.includes(n)) return new Set();
+    const out = new Set(info[n].own);
+    info[n].refs.forEach(r => walk(r, seen.concat(n)).forEach(x => out.add(x)));
+    return out;
+  };
+  const K = {};
+  Object.keys(info).forEach(n => { const s = walk(n, []); K[n] = s.has('g') ? (s.has('e') ? 'p' : 'g') : 'ok'; });
+  return K;
+}
+
+const tok = (n, K) => `<span class="tok ${K[n] && K[n] !== 'ok' ? K[n] : ''}">${esc(n)}</span>`;
+const link = (t) => CFG.link === 'epic' ? `https://open.epic.com/EHITables/GetTable/${t}.htm`
+  : CFG.link === 'athena' ? `https://docs.mydata.athenahealth.com/fhir-r4/StructureDefinition-athena-${CFG.pages[t] || t.toLowerCase()}-profile.html` : '';
+const chip = (t, c, row) => {
+  const inner = `<span class="tb">${t}</span>${c}${row ? `<span class="rw">${row}</span>` : ''}`;
+  return CFG.link ? `<a class="v" href="${link(t)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : `<span class="v">${inner}</span>`;
+};
+
+// One pass over a string: {TABLE.COLUMN} chips, [need|source] boxes, `variable` names, and bare table or column names.
+const NAMES = CFG.names.join('|');
+const CODE = CFG.link === 'athena'
+  ? `\\b((?:${NAMES})\\.[A-Za-z][A-Za-z0-9_.:\\-]*[A-Za-z0-9])`
+  : `\\b((?:[A-Z][A-Z0-9]*_[A-Z0-9_]+${NAMES ? '|' + NAMES : ''})(?:\\.[A-Z][A-Z0-9_]+)?)\\b`;
+const RX = new RegExp('\\{([A-Za-z][A-Za-z0-9_]*)\\.([A-Za-z0-9_.:\\-\\[\\]]+)\\}|\\[([^\\]|]+)\\|([^\\]]+)\\]|`([^`]+)`|' + CODE, 'g');
+// R maps a table to what one of its rows is. swap maps a variable name to the box that replaces it in a formula line.
+const rich = (s, K, src, R, swap) => esc(s).replace(RX, (all, t, c, need, from, ref, code) => {
+  if (t) return src ? chip(t, c, R && R[t]) : `<code>${t}.${c}</code>`;
+  if (need) return src ? `<span class="x"><span>${need}</span><span class="src">${from}</span></span>` : `${need} (${from})`;
+  if (ref) { const name = ref.replace(/&amp;/g, '&'); return swap && swap[name] ? swap[name]() : (K[name] !== undefined ? tok(ref, K) : ref); }
+  return `<code>${code}</code>`;
+});
+const rowLine = (s, K) => {
+  const m = /^([A-Za-z][A-Za-z0-9_]*): (.*)$/.exec(s);
+  return m ? `<code>${m[1]}</code>: ${rich(m[2], K, false)}` : rich(s, K, false);
+};
+
+const sum = document.getElementById('summary');
+const det = document.getElementById('detail');
+const all = DATA.flatMap(g => g.items);
+const n = k => all.filter(m => m.s === k).length;
+document.getElementById('counts').textContent = `${n('yes')} are yes, ${n('partly')} partly and ${n('no')} no`;
+DATA.forEach(g => {
+  sum.insertAdjacentHTML('beforeend', `<tr class="grp"><td colspan="3">${esc(g.grp)}</td></tr>`);
+  det.insertAdjacentHTML('beforeend', `<h2>${esc(g.grp)}</h2>`);
+  g.items.forEach(m => {
+    const K = kinds(m);
+    const mains = m.main === 'none' ? 'none' : m.main.split(',').map(t => `<code>${esc(t.trim())}</code>`).join(', ');
+    sum.insertAdjacentHTML('beforeend', `<tr><td><a href="#${m.id}">${esc(m.name)}</a></td><td><span class="status ${m.s}">${S[m.s]}</span></td><td>${mains}</td></tr>`);
+    // What one row of each table on this card is, to print inside the chips.
+    const R = {};
+    m.rows.forEach(x => { const p = /^([A-Za-z][A-Za-z0-9_]*): (one (?:row|record) per [^.]+)\./.exec(x); if (p) R[p[1]] = esc(p[2]); });
+    // A source read two ways ("Professional billing: ...", "Hospital billing: ...") gets one labelled line per reading.
+    const labelled = (l, f) => { const p = /^([A-Z][A-Za-z' ]{2,40}): (.*)$/.exec(l); return p ? `<span class="lab">${esc(p[1])}:</span> ${f(p[2])}` : f(l); };
+    const full = t => rich(t, K, true, R);
+    const plain = t => rich(t, K, true);
+    const body = t => { const lines = t.split('\n'); return lines.length === 1 ? full(lines[0]) : lines.map(l => `<span class="rd">${labelled(l, full)}</span>`).join(''); };
+    const leaf = m.vars.filter(v => v.x);
+    // The formula again, each variable that has a source swapped for a box holding that source.
+    const placed = new Set(), swap = {};
+    leaf.forEach(v => { swap[v.n] = () => { placed.add(v.n); return `<span class="grp ${K[v.n] !== 'ok' ? K[v.n] : ''}"><span class="gl">${esc(v.n)}</span><span class="gb">${body(v.x)}</span></span>`; }; });
+    const fx = m.eq.filter(l => [...l.matchAll(/`([^`]+)`/g)].some(a => swap[a[1]]))
+      .map(l => `<div class="ln fx">${rich(l, K, true, R, swap)}</div>`).join('');
+    const rest = leaf.filter(v => !placed.has(v.n)).map(v => `<div class="ln fx">${tok(v.n, K)} <span class="is">=</span> <span class="grp ${K[v.n] === 'g' ? 'g' : ''}"><span class="gb">${body(v.x)}</span></span></div>`).join('');
+    const stand = leaf.filter(v => v.alt).map(v => `<div class="ln fx"><span class="lab">Stand-in from the export:</span> ${tok(v.n, K)} <span class="is">&asymp;</span> <span class="grp"><span class="gb">${body(v.alt)}</span></span></div>`).join('');
+    const wbody = t => t.split('\n').map(l => labelled(l, plain)).join('<br>');
+    const wl = [];
+    leaf.forEach(v => {
+      if (v.w) wl.push(`<div class="ln wr">${tok(v.n, K)} ${wbody(v.w)}</div>`);
+      if (v.altw) wl.push(`<div class="ln wr">${tok(v.n, K)} <span class="lab">stand-in:</span> ${wbody(v.altw)}</div>`);
+    });
+    const src = fx + rest + stand
+      + (wl.length ? `<div class="sep">Which ${CFG.rowWord}s count</div>` + wl.join('') : '')
+      + (m.extra.length ? `<div class="sep">Also in the export, not part of the formula</div>`
+        + m.extra.map(e => `<div class="ln wr"><span class="lab">${esc(e.n)}:</span> ${plain(e.x)}</div>`).join('') : '');
+    const rows = m.rows.length ? `<ul>${m.rows.map(x => `<li>${rowLine(x, K)}</li>`).join('')}</ul>`
+      : `<span class="none">None. No variable on this card comes from the export.</span>`;
+    const gaps = m.gaps.length ? `<ul class="gaps">${m.gaps.map(x => `<li><div class="gv">${x.v.split(',').map(v => tok(v.trim(), K)).join(' ')}</div>${rich(x.t, K, false)}</li>`).join('')}</ul>`
+      : `<span class="none">None. Every variable is in the export.</span>`;
+    const checks = m.checks.length ? `<ul>${m.checks.map(x => `<li>${rich(x, K, false)}</li>`).join('')}</ul>` : `<span class="none">None.</span>`;
+    det.insertAdjacentHTML('beforeend', `
+      <div class="m" id="${m.id}">
+        <h3>${esc(m.name)}</h3>
+        <div class="top"><span class="status ${m.s}">${S[m.s]}</span>${m.sheet !== m.name ? `<span>Spreadsheet name: ${esc(m.sheet)}</span>` : ''}</div>
+        <dl class="sheet">
+          <dt>Description</dt><dd>${esc(m.desc)}</dd>
+          <dt>Intended use</dt><dd>${esc(m.use)}</dd>
+          <dt>Benchmark</dt><dd>${esc(m.bench)}</dd>
+        </dl>
+        <dl>
+          <dt>Formula</dt><dd><div class="eq">${m.eq.map(l => `<div>${rich(l, K, false)}</div>`).join('')}</div></dd>
+          <dt>Variables</dt><dd><dl class="vars">${m.vars.map(v => `<dt>${tok(v.n, K)}</dt><dd>${rich(v.d, K, false)}</dd>`).join('')}</dl></dd>
+          <dt>${CFG.inLabel}</dt><dd class="wide"><div class="f">${src}</div></dd>
+          <dt>${CFG.rowsLabel}</dt><dd>${rows}</dd>
+          <dt>Gaps</dt><dd>${gaps}</dd>
+          <dt>Checks</dt><dd>${checks}</dd>
+        </dl>
+      </div>`);
+  });
+});
+// The cards are drawn after load, so a link straight to one card needs a nudge.
+if (location.hash.length > 1) { const el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
+</script>
+</body>
+</html>

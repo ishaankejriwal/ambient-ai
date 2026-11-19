@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Program Integrity Metrics in the athenahealth Export</title>
+<meta name="description" content="Each CHAI program integrity metric as a plain formula, with the athenahealth FHIR EHI export resource and element behind every variable and the pieces the export does not have.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* One reading column. Summary table first, then one card per metric. Every card has the same parts in the same order. */
+:root {
+  --bg: #ffffff; --fg: #1c1c1c; --fg-2: #555555; --fg-3: #8a8a8a;
+  --line: #dddddd; --line-2: #efefef; --f-bg: #f7f7f5;
+  --accent: #1f4e79; --yes: #2e7d32; --partly: #c77d00; --no: #9e9e9e;
+  --miss: #b3261e; --miss-bg: #fff6f5; --part-bg: #fff9ee; --mono-fg: #333333;
+  --sans: 'Atkinson Hyperlegible', 'Segoe UI', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161616; --fg: #e8e8e8; --fg-2: #b0b0b0; --fg-3: #7a7a7a; --line: #333333; --line-2: #262626; --f-bg: #1d1d1d;
+    --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --part-bg: #2a2416; --mono-fg: #cfcfcf;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161616; --fg: #e8e8e8; --fg-2: #b0b0b0; --fg-3: #7a7a7a; --line: #333333; --line-2: #262626; --f-bg: #1d1d1d;
+  --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --part-bg: #2a2416; --mono-fg: #cfcfcf;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { font-family: var(--sans); background: var(--bg); color: var(--fg); font-size: 16px; line-height: 1.55; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.page { max-width: 920px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 48px 64px; }
+h1 { font-size: 30px; line-height: 1.2; font-weight: 700; margin-bottom: 14px; text-wrap: balance; }
+h2 { font-size: 21px; font-weight: 700; margin: 44px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+h3 { font-size: 18px; font-weight: 700; margin: 34px 0 4px; }
+p { margin-bottom: 12px; max-width: 70ch; text-wrap: pretty; }
+p.small, li.small { font-size: 14px; color: var(--fg-2); }
+ul { padding-left: 20px; margin-bottom: 12px; max-width: 70ch; }
+li { margin-bottom: 5px; }
+code { font-family: var(--mono); font-size: .86em; color: var(--mono-fg); overflow-wrap: anywhere; }
+.status { font-weight: 700; white-space: nowrap; }
+.status::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: var(--c); transform: translateY(-1px); }
+.yes { --c: var(--yes); } .partly { --c: var(--partly); } .no { --c: var(--no); }
+.tbl-wrap { overflow-x: auto; margin: 12px 0 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th { text-align: left; font-size: 13px; color: var(--fg-2); font-weight: 700; padding: 6px 10px 6px 0; border-bottom: 2px solid var(--fg); }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+tr.grp td { padding-top: 16px; font-weight: 700; color: var(--fg-2); font-size: 13px; border-bottom: 0; }
+td a { color: inherit; text-decoration: none; }
+td a:hover { text-decoration: underline; }
+
+/* Definition boxes in the intro. */
+.words { display: grid; grid-template-columns: var(--dtw, 90px) minmax(0, 1fr); gap: 7px 14px; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; margin: 10px 0 16px; font-size: 14.5px; max-width: 78ch; }
+.words dt { font-weight: 700; }
+.words.parts { --dtw: 150px; }
+.words.gloss { --dtw: 150px; }
+
+/* A variable. Solid = in the export. Amber dashed = partly. Red dashed = not in the export. */
+.tok { display: inline-block; padding: 0 6px; border: 1px solid var(--fg-3); border-radius: 4px; background: var(--bg); line-height: 1.45; font-size: .94em; }
+.tok.p { border: 1.5px dashed var(--partly); background: var(--part-bg); }
+.tok.g { border: 1.5px dashed var(--miss); background: var(--miss-bg); }
+
+/* Source lines. Solid chip = a column in the export, table on top. Red dashed box = not in the export, with where to get it. */
+.f { padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--f-bg); font-size: 13.5px; color: var(--fg); }
+.f .ln { line-height: 2.75; padding: 3px 0; }
+.f .ln + .ln { border-top: 1px solid var(--line); }
+.f .ln.more { border-top: 0; padding-top: 0; padding-left: 18px; }
+.f .is { color: var(--fg-3); margin: 0 3px; }
+.f .lab { color: var(--fg-2); font-size: 12.5px; }
+.f .sep { font-size: 12.5px; color: var(--fg-2); font-weight: 700; padding: 9px 0 0; border-top: 1px solid var(--line); line-height: 1.4; }
+.f .sep + .ln { border-top: 0; }
+.f .v, .f .x { display: inline-flex; flex-direction: column; vertical-align: middle; line-height: 1.35; max-width: 100%; overflow-wrap: anywhere; padding: 3px 7px 4px; border-radius: 4px; }
+.f .v { border: 1px solid var(--line); background: var(--bg); color: var(--mono-fg); font-family: var(--mono); font-size: 13px; font-weight: 500; text-decoration: none; }
+.f a.v:hover { border-color: var(--accent); }
+.f .v .tb { font-size: 10.5px; font-weight: 400; color: var(--fg-3); letter-spacing: .02em; }
+.f .v .tb::after { content: " resource"; font-family: var(--sans); }
+.f .x { border: 1.5px dashed var(--miss); background: var(--miss-bg); font-size: 13px; }
+.f .x .src { font-size: 10.5px; color: var(--miss); font-weight: 700; }
+.f .x .src::before { content: "not in athena · get from "; font-weight: 400; }
+.legend-f { display: inline-block; padding: 0; border: 0; background: none; vertical-align: middle; }
+
+/* A card. */
+.m { padding: 4px 0 22px; border-bottom: 1px solid var(--line-2); scroll-margin-top: 20px; }
+.m .top { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 12px; }
+.m dl { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px 14px; font-size: 15px; }
+.m dt { color: var(--fg-3); font-size: 13px; padding-top: 2px; }
+.m dd { min-width: 0; max-width: 78ch; }
+.m dd.wide { max-width: none; }
+.m dd ul { margin: 0; padding-left: 18px; max-width: none; }
+.m dd ul li { font-size: 14.5px; margin-bottom: 4px; }
+.m dd ul.gaps { list-style: none; padding-left: 0; }
+.m dd ul.gaps li { margin-bottom: 9px; }
+.m dd ul.gaps .gv { margin-bottom: 2px; }
+.m dd dl.vars { grid-template-columns: max-content minmax(0, 1fr); gap: 7px 12px; font-size: 14.5px; }
+.m dd dl.vars dt { color: inherit; font-size: inherit; padding-top: 0; max-width: 240px; }
+.f .ln.fx { font-size: 15px; line-height: 2.1; padding: 5px 0; }
+.f .ln.wr { line-height: 2.5; }
+.f .grp { display: inline-flex; flex-direction: column; vertical-align: middle; margin: 4px 3px; padding: 2px 7px 5px; border: 1px solid var(--fg-3); border-radius: 6px; background: var(--bg); max-width: 100%; font-size: 13.5px; line-height: 2; }
+.f .grp.p { border: 1.5px dashed var(--partly); background: var(--part-bg); }
+.f .grp.g { border: 1.5px dashed var(--miss); background: var(--miss-bg); }
+.f .grp.g .x { border: 0; background: none; padding: 0; }
+.f .grp .gl { font-size: 11.5px; font-weight: 700; color: var(--fg-2); line-height: 1.6; }
+.f .rd { display: block; }
+.f .v .rw { font-family: var(--sans); font-size: 10.5px; font-weight: 400; color: var(--fg-3); max-width: 190px; overflow-wrap: break-word; }
+.f .grp .v, .f .grp .x { margin: 2px 0; }
+.m dl.sheet { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; margin-bottom: 16px; grid-template-columns: 98px minmax(0, 1fr); gap: 8px 14px; font-size: 14.5px; color: var(--fg-2); }
+.m dl.sheet dd { white-space: pre-line; }
+.m .eq { font-size: 15.5px; line-height: 2.05; }
+.m .eq div + div { font-size: 14.5px; color: var(--fg-2); }
+.m .none { color: var(--fg-2); font-size: 14.5px; }
+@media (max-width: 600px) {
+  .m dl, .m dl.sheet, .m dd dl.vars { grid-template-columns: 1fr; gap: 2px 0; }
+  .m dd dl.vars dt { margin-top: 6px; }
+  .m dt { margin-top: 10px; }
+  .words { grid-template-columns: 1fr; gap: 2px 0; }
+  .words dd { margin-bottom: 8px; }
+}
+.nav { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 28px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.nav.use { margin-bottom: 10px; }
+.nav .lbl { color: var(--fg-3); }
+.nav a { color: var(--fg-2); text-decoration: none; padding-bottom: 2px; border-bottom: 2px solid transparent; }
+.nav a:hover { color: var(--fg); border-bottom-color: var(--line); }
+.nav a[aria-current="page"] { color: var(--fg); font-weight: 700; border-bottom-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+<nav class="nav use" aria-label="Use case"><span class="lbl">Use case:</span><a href="athena.html">Ambient AI</a><a href="pi-athena.html" aria-current="page">Program Integrity</a><a href="cds-athena.html">Clinical Decision Support</a></nav>
+<nav class="nav" aria-label="EHR system"><span class="lbl">Program Integrity metrics in the EHI export of:</span><a href="pi.html">Epic</a><a href="pi-oracle.html">Oracle Health</a><a href="pi-athena.html" aria-current="page">athenahealth</a></nav>
+
+<h1>Can athenahealth's EHI export score the program integrity metrics a health system owns?</h1>
+<p>The framework spreadsheet lists 53 Program Integrity metrics. This page covers the 28 whose persona includes Provider or All. It writes each one as a formula in plain words, then shows which athenahealth FHIR EHI export resource and element supplies each piece of it. Pieces the export does not have are marked in red, with where to get them.</p>
+<p>Of the 28 metrics, <span id="counts"></span>. Partly means the export has some of the inputs, usually the claims and the recorded outcomes, and an audit, a reviewer or a vendor supplies the rest.</p>
+<p class="small">The same 28 cards exist for <a href="pi.html">Epic</a> and <a href="pi-oracle.html">Oracle Health</a>. The formula and the variables are the same on all three pages, and only the sources change.</p>
+
+<h2>Resource, record and element</h2>
+<dl class="words"><dt>Resource</dt><dd>One file in the export, like one tab of a spreadsheet. The Epic and Oracle pages call this a table. <code>Payment</code> is the file of payments posted to visits.</dd><dt>Record</dt><dd>One JSON object in that file, like a spreadsheet row. In <code>Payment</code> one record is one payment entry on a visit. In <code>Claim</code> one record is one electronic claim.</dd><dt>Element</dt><dd>One named value in a record, like a spreadsheet column. <code>Payment.insurancePayment.value</code> is the amount the insurer paid. Nested names are joined with dots.</dd></dl>
+<p class="small">Most formulas count records, so each card says what one record stands for in every resource it uses, and each chip in a formula repeats it.</p>
+
+<h2>How to read a card</h2>
+<p>Each metric has one card, and every card has the same parts in the same order.</p>
+<dl class="words parts">
+  <dt>Description, Intended use, Benchmark</dt><dd>Copied word for word from the spreadsheet.</dd>
+  <dt>Formula</dt><dd>The metric as an equation in plain words. Each boxed word is a variable.</dd>
+  <dt>Variables</dt><dd>What each boxed word means.</dd>
+  <dt>In athena</dt><dd>The same formula again, with each variable swapped for the data behind it. <span class="f legend-f"><span class="v"><span class="tb">Payment</span>insurancePayment.value<span class="rw">one record per payment entry on a visit</span></span></span> reads: the element <code>insurancePayment.value</code>, from the resource <code>Payment</code>, where there is one record per payment entry on a visit. <span class="f legend-f"><span class="x"><span>what you still need</span><span class="src">its source</span></span></span> is something the export does not have, with where to get it. Under the formula, "Which records count" says which records of each resource go in. Click a chip to open that resource's profile page.</dd>
+  <dt>Resources and records</dt><dd>What one record of each resource stands for, and how the resources join.</dd>
+  <dt>Gaps</dt><dd>Each variable the export does not have, and how to get it.</dd>
+  <dt>Checks</dt><dd>What to confirm in your own export before you trust the number.</dd>
+</dl>
+<p>The box around a variable shows where it stands. <span class="tok">Visits</span> is in the export. <span class="tok p">Note time</span> is partly there: the export has a stand-in or part of the answer, and the rest comes from somewhere else. <span class="tok g">Survey score</span> is not in the export.</p>
+<p>The status beside each metric's name follows from those boxes. Yes means every variable is in the export. Partly means some are, or the export has a stand-in. No means none are. Some cards end the In athena part with "Also in the export". Those are elements that help but sit outside the formula, and they do not change the status.</p>
+<p class="small">Every rate and percent change comes out as a fraction. 0.05 is 5 percent, or 5 percentage points when it is the gap between two rates. Count each case once. If the bottom of a fraction is zero, report N/A.</p>
+
+<h2>How to read the athena docs</h2>
+<ul class="small">
+  <li class="small">Each resource has a profile page (StructureDefinition-athena-&lt;name&gt;-profile) listing its elements and allowed codes, and a Mappings tab naming the athenaPractice or athenaFlow table and column each element comes from. The Mappings tab is the place to settle what a field means.</li>
+  <li class="small">Every chart document becomes an <code>Encounter</code>. The Encounter page says each physician interaction results in a chart document, and the resource is built from the DOCUMENT table. So phone notes, refill notes and result notes are Encounters too, and some athenaPractice visits also produce a second Encounter from the PatientVisit table. Keep visit document types only (<code>Encounter.type:DOCTYPE</code>) or require an <code>Encounter.appointment</code>, and count appointments rather than Encounters where you can.</li>
+  <li class="small"><code>DocumentReference.context.encounter</code> points at the Encounter built from the same DOCUMENT row. <code>DocumentReference.authenticator</code> and <code>Encounter.extension:AUTHENTICATOR</code> are both the document's signer. The extension's slice is misspelled "AUNTHENTICATOR" on the profile page, so match it by its URL.</li>
+  <li class="small">Documents are versioned. <code>docStatus</code> is preliminary, final, amended or entered-in-error. In base FHIR an amendment is a new record whose <code>relatesTo.code</code> is "replaces" and whose target becomes "superseded", and an addendum is a new record with "appends". The athena pages map these from internal codes without saying how, so verify on one known amended note and one known addendum. Drop entered-in-error records everywhere.</li>
+  <li class="small">Note text is an attachment under <code>DocumentReference.content</code>. The mappings build every attachment as a <code>Binary</code> record, so expect to fetch Binary rather than find inline text.</li>
+  <li class="small">Two timestamps matter and only one is explained. <code>DocumentReference.date</code> comes from the DOCUMENT row's WHENCREATED column, the time that version was created. <code>DocumentReference.extension:pubtime</code> comes from its PUBTIME column, and the docs do not say whether that is the signing time or a filing time. Check it against a few notes whose history you know before using it as the sign time.</li>
+  <li class="small">References are IDs. <code>DocumentReference.authenticator</code> points at a <code>Practitioner</code> record, which has the name and NPI (the national provider identifier). Practitioner records come from different source tables for clinical and billing data, so one clinician may have two IDs. Join on NPI when crossing from notes to charges.</li>
+  <li class="small">The export is requested per group (Group $export): all patients, the patients whose responsible provider is one practitioner, or the patients whose home location is one site. Use the all-patients group, since a provider's visits include other providers' panel patients. The date filter (_since) returns only records changed after a date, so the before period needs a full pull.</li>
+  <li class="small">Billing resources (<code>Charge</code>, <code>Claim</code>, <code>Payment</code>) exist only for athenaPractice. athenaFlow sites have no charges in the export. <code>Charge</code> is a custom logical model, not a standard FHIR resource.</li>
+</ul>
+
+
+<h2>The resources that matter here</h2><ul><li>The billing resources are exported only for athenaPractice. athenaFlow sites have none, so their billing cards need the billing system they use.</li><li><code>Charge</code>: one record per charge line, with the CPT code, units, copay and auth number. It has no contract rate and no void or status element.</li><li><code>Payment</code> and <code>Deductible</code>: amounts posted to a service on a visit, tied to the visit by <code>ticketNumber</code>. Neither has a claim number, a denial code or an adjustment reason.</li><li><code>Claim</code>: one record per electronic claim, with the insurer, who filed it, the day it was sent and the claim file text in <code>claimData</code>. It has no visit ticket and no payer decision.</li><li>The EHI export has no audit log. <code>AuditEvent</code> has a profile page but is not on the export's list of resources.</li></ul><h2>Where the AI shows up</h2><ul><li>athena documents no AI or automation marker on any resource. Get the tool's case log from the vendor, with the patient, service date and insurer for each case so you can match it to the export.</li><li>Ask the vendor whether its tool files claims in athena under its own user. If it does, look for that user in <code>Claim.filedBy</code>.</li></ul>
+
+<h2>Words every card uses</h2>
+<dl class="words gloss"><dt>AI case</dt><dd>A claim, visit or request the AI handled, taken from the vendor's log and matched to the export by patient, service date and insurer.</dd><dt>Before, After</dt><dd>Fixed periods before and after the AI went live.</dd><dt>Ticket</dt><dd>athenaPractice's number for one visit, <code>ticketNumber</code> on <code>Charge</code>, <code>Payment</code> and <code>Deductible</code>. Payment has no claim number, so one ticket and one insurer stand in for a claim.</dd><dt>835 remittance file</dt><dd>The electronic file a payer sends back saying what it paid, adjusted or denied on each claim line. The export does not include it.</dd></dl>
+
+<h2>Summary</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th scope="col">Metric</th><th scope="col">From the export?</th><th scope="col">Main resources</th></tr></thead>
+  <tbody id="summary"></tbody>
+</table>
+</div>
+
+<h2>Metric by metric</h2>
+<div id="detail"></div>
+
+<h2>Inputs outside the export</h2><ul><li>Denials, remittance detail, claim numbers on payments and appeal outcomes. Get them from the 835 remittance files and the payers' letters.</li><li>Prior auth requests, with the time sent, the urgency and the decision.</li><li>Confirmed audit findings, coder reviews and contract rates.</li><li>The AI's own log: what it flagged, suggested, read and handed to a person, with a full audit trail.</li><li>Program costs, and provider demographics such as race or ownership status.</li></ul><p class="small">Sources: the Program Integrity sheet of TE_Framework_Post-Deployment_Cleaned.xlsx, and the athenahealth FHIR R4 implementation guide v27.0.0 at docs.mydata.athenahealth.com/fhir-r4 (the EHI export resource list, and the profile, definitions and mappings pages for each resource used), read on 18 Nov 2026.</p>
+
+</div>
+<script>
+// Card data. Source lines use a small notation: {TABLE.COLUMN} is in the export, [what you need|where to get it] is not, and `Name` is a variable.
+const CFG = {
+ "link": "athena",
+ "pages": {
+  "Encounter": "encounter",
+  "DocumentReference": "documentref",
+  "Patient": "patient",
+  "Practitioner": "practitioner",
+  "PractitionerRole": "practitionerrole",
+  "Appointment": "appointment",
+  "Charge": "charge",
+  "Consent": "consent",
+  "Provenance": "provenance",
+  "Binary": "binary",
+  "Account": "account",
+  "Adjustment": "adjustment",
+  "AllergyIntolerance": "allergy",
+  "AuditEvent": "auditevent",
+  "CarePlan": "careplan",
+  "Claim": "claim",
+  "ClinicalImpression": "clinicalimpressn",
+  "Collection": "collection",
+  "Condition": "condition",
+  "Coverage": "coverage",
+  "Deductible": "deductible",
+  "Device": "device",
+  "DiagnosticReport": "diagnosticreport",
+  "Eligibility": "eligibility",
+  "Goal": "goal",
+  "Immunization": "immunization",
+  "List": "list",
+  "Media": "media",
+  "Medication": "medication",
+  "MedicationAdministration": "medicationadmin",
+  "MedicationDispense": "meddispense",
+  "MedicationRequest": "medrequest",
+  "MedicationStatement": "medstatement",
+  "Observation": "observation",
+  "Organization": "organization",
+  "Payment": "payment",
+  "Posting": "posting",
+  "Procedure": "procedure",
+  "ServiceRequest": "servicerequest"
+ },
+ "names": [
+  "DocumentReference",
+  "PractitionerRole",
+  "Practitioner",
+  "Appointment",
+  "Provenance",
+  "Deductible",
+  "Condition",
+  "Encounter",
+  "Payment",
+  "Patient",
+  "Consent",
+  "Charge",
+  "Binary",
+  "Claim"
+ ],
+ "inLabel": "In athena",
+ "rowWord": "record",
+ "rowsLabel": "Resources and records"
+};
+const DATA = [
+ {
+  "grp": "Efficacy: payment accuracy",
+  "items": [
+   {
+    "id": "ipr",
+    "name": "Improper Payment Rate",
+    "row": 3,
+    "s": "partly",
+    "main": "Payment",
+    "eq": [
+     "Improper payment rate = `Improper dollars` ÷ `Paid dollars`"
+    ],
+    "vars": [
+     {
+      "n": "Improper dollars",
+      "d": "Dollars from `Paid dollars` that an audit says should not have been paid as billed.",
+      "x": "[improper dollars confirmed by audit|audit findings]",
+      "w": "matched to payments by {Payment.ticketNumber} and {Payment.procedureCode}"
+     },
+     {
+      "n": "Paid dollars",
+      "d": "All the money insurers paid on the claims in the audit.",
+      "x": "sum of {Payment.insurancePayment.value}",
+      "w": "records on the audited claims, matched by {Payment.ticketNumber} and {Payment.insuranceCarrier.reference}"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Payment: one record per payment entry on a visit. insurancePayment is the part the insurer paid, and ticketNumber is the visit."
+    ],
+    "gaps": [
+     {
+      "v": "Improper dollars",
+      "t": "athena does not hold audit results. An auditor confirms each improper amount. Count each finding once, because a recoupment (the payer taking money back) can settle the same finding."
+     }
+    ],
+    "checks": [
+     "Add up both totals over the same claims.",
+     "To estimate a rate for all claims, apply the audit's sampling weights."
+    ],
+    "sheet": "Improper Payment Rate",
+    "desc": "Share of payments made in error, mostly from missing documentation or claims that break coverage, coding, or billing rules. CMS measures it every year from a stratified random sample of claims.",
+    "use": "Shows whether an AI claims review tool actually lowers improper payments over time, measured the same way CMS audits do.",
+    "bench": "CMS FY2025 rates: Medicare FFS 6.55%, Medicaid 6.12%, Medicare Advantage 6.09%. Track year over year against the latest CMS report for the same program and claim type."
+   },
+   {
+    "id": "cert",
+    "name": "CERT Error Rate",
+    "row": 4,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "CERT error rate = `Published CERT rate` for your claim type and error category"
+    ],
+    "vars": [
+     {
+      "n": "Published CERT rate",
+      "d": "The improper payment rate CMS reports each year for traditional Medicare, which pays per service, from its CERT sample of claims.",
+      "x": "[CERT rate by claim type and error category|CMS annual report]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Your Medicare fee-for-service claims",
+      "x": "{Claim.id} where {Claim.insuranceCarrier.display} is your Medicare administrative contractor, the company that pays traditional Medicare claims in your region"
+     }
+    ],
+    "rows": [
+     "Claim: one record per electronic claim. insuranceCarrier is the insurer it went to."
+    ],
+    "gaps": [
+     {
+      "v": "Published CERT rate",
+      "t": "CMS publishes the rate. athena can pick out your own Medicare fee-for-service claims, and a rate you work out from them is a local audit, so label it one."
+     }
+    ],
+    "checks": [],
+    "sheet": "CERT Error Rate",
+    "desc": "Medicare FFS improper payment rate from CMS's Comprehensive Error Rate Testing program. CMS reviews about 37,500 randomly sampled claims a year (50,000 for FY2024) against Medicare payment rules.",
+    "use": "Post-deployment baseline. If an AI review tool works, the error rate for the claim types it touches should come in under the CERT rate for the same categories.",
+    "bench": "Medicare FFS CERT rate was 6.55% in FY2025. Compare by reporting year, claim type, error category, and service."
+   },
+   {
+    "id": "over",
+    "name": "Overpayment Rate",
+    "row": 5,
+    "s": "partly",
+    "main": "Payment",
+    "eq": [
+     "Overpayment rate = `Overpaid claims` ÷ `Paid claims`"
+    ],
+    "vars": [
+     {
+      "n": "Overpaid claims",
+      "d": "`Paid claims` where the payer paid more than it owed.",
+      "x": "count [claims with a confirmed overpayment|audit or payer finding]",
+      "w": "among the `Paid claims`"
+     },
+     {
+      "n": "Paid claims",
+      "d": "Claims in the reviewed set with at least one insurance payment.",
+      "x": "[claims with an insurance payment, by claim number|835 remittance files]",
+      "alt": "count distinct {Payment.ticketNumber} and {Payment.insuranceCarrier.reference} pairs",
+      "altw": "records in the reviewed set where {Payment.insurancePayment.value} is above zero. One visit and one insurer stand in for one claim."
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Payment: one record per payment entry on a visit. insurancePayment is the part the insurer paid, and ticketNumber is the visit."
+    ],
+    "gaps": [
+     {
+      "v": "Overpaid claims",
+      "t": "An audit or a payer finding confirms the overpayment. The export has no overpayment letters or recoupment flag. A coding audit can also find overpayments the payer has not reported."
+     },
+     {
+      "v": "Paid claims",
+      "t": "Payment has no claim number. Take paid claims from the 835 remittance files, or count each visit and insurer once and label it an estimate."
+     }
+    ],
+    "checks": [
+     "Count both numbers over the same reviewed set of claims."
+    ],
+    "sheet": "Overpayment Rate",
+    "desc": "Share of paid claims where the payment was more than what was owed. Tracked apart from underpayments and documentation errors.",
+    "use": "Shows whether AI review catches overbilling before or after payment. A standard KPI in RAC-style retrospective audits.",
+    "bench": "Compare overpayment dollars and rate to historical audit results by program, claim type, service line, and audit year. Read it alongside the CMS improper payment report."
+   },
+   {
+    "id": "under",
+    "name": "Underpayment Rate",
+    "row": 6,
+    "s": "partly",
+    "main": "Payment, Charge, Deductible",
+    "eq": [
+     "Underpayment rate = `Underpaid claims` ÷ `Paid claims`",
+     "Shortfall = `Expected payment` − ( `Payer paid` + `Patient share` )"
+    ],
+    "vars": [
+     {
+      "n": "Underpaid claims",
+      "d": "`Paid claims` whose `Shortfall`, added up over the claim's lines, is more than zero.",
+      "x": "count `Paid claims`",
+      "w": "the ones with a positive `Shortfall`"
+     },
+     {
+      "n": "Paid claims",
+      "d": "Primary professional claims that got a payment.",
+      "x": "[primary claims with an insurance payment, by claim number|835 remittance files]",
+      "alt": "count distinct {Payment.ticketNumber} and {Payment.insuranceCarrier.reference} pairs",
+      "altw": "records where {Payment.insurancePayment.value} is above zero. One visit and one insurer stand in for one claim, primary or not."
+     },
+     {
+      "n": "Expected payment",
+      "d": "The full amount the contract allows for one claim line, counting the part the patient owes.",
+      "x": "[expected payment for the line under the contract|payer contract]",
+      "w": "when the billed codes are wrong, use the [correct payment for the service|coding audit] in its place"
+     },
+     {
+      "n": "Payer paid",
+      "d": "What the payer paid on the line.",
+      "x": "sum of {Payment.insurancePayment.value}",
+      "w": "records with the charge line's {Payment.ticketNumber} and {Payment.procedureCode}, from the claim's insurer"
+     },
+     {
+      "n": "Patient share",
+      "d": "What the payer says the patient owes on the line: copay, coinsurance and deductible.",
+      "x": "[copay, coinsurance and deductible the payer assigned to the line|835 remittance files]",
+      "alt": "{Charge.coPayAmount.value} + {Deductible.insuranceDeductible.value}",
+      "altw": "deductible records with the charge line's {Deductible.ticketNumber} and {Deductible.procedureCode}. There is no coinsurance element."
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Payment: one record per payment entry on a visit. insurancePayment is the part the insurer paid.",
+     "Charge: one record per charge line. coPayAmount is the copay on the line.",
+     "Deductible: one record per deductible amount posted to a visit. insuranceDeductible is the amount when the insurer is the source.",
+     "Join Payment and Deductible to Charge on ticketNumber and the procedure code."
+    ],
+    "gaps": [
+     {
+      "v": "Paid claims",
+      "t": "Payment has no claim number and does not say which insurer was primary. Take primary paid claims from the 835 remittance files, or label the visit count an estimate."
+     },
+     {
+      "v": "Expected payment",
+      "t": "The docs call Charge.allowed an amount from insurance, so it cannot show an underpayment. Take the expected payment from the payer contract. A coding audit corrects codes billed too low."
+     },
+     {
+      "v": "Patient share",
+      "t": "The export has no remittance detail or coinsurance amount. Get what the payer assigned the patient on each line from the 835 remittance files, and label the stand-in an estimate."
+     }
+    ],
+    "checks": [
+     "Add up the lines to each claim before you count the claim.",
+     "Check on a few lines that Payment.procedureCode matches Charge.code or Charge.cptCode before you join on it."
+    ],
+    "sheet": "Underpayment Rate",
+    "desc": "Share of paid claims where the provider got less than it was owed. Measured separately from overpayments so accuracy is checked in both directions.",
+    "use": "Surfaces systematic underbilling that AI tools can catch. Medicare RACs find and return underpayments as well as overpayments.",
+    "bench": "Compare underpayment dollars and the share of reviewed claims with underpayment findings to historical results. Read it with the overpayment, documentation, and medical necessity error rates."
+   },
+   {
+    "id": "coding",
+    "name": "Coding Accuracy Rate",
+    "row": 24,
+    "s": "partly",
+    "main": "Charge, Claim",
+    "eq": [
+     "Coding accuracy = `Codes matching the coder` ÷ `AI codes reviewed`"
+    ],
+    "vars": [
+     {
+      "n": "Codes matching the coder",
+      "d": "`AI codes reviewed` that match the codes a certified coder picks from the same chart.",
+      "x": "[codes a certified coder assigns to the same charts|independent coding review]",
+      "w": "only the ones that also appear in `AI codes reviewed`"
+     },
+     {
+      "n": "AI codes reviewed",
+      "d": "The diagnosis and procedure codes the AI first assigned, on the charts in the review.",
+      "x": "[the AI's original code list|AI suggestion log]",
+      "alt": "{Charge.cptCode} and diagnosis codes in {Claim.claimData}",
+      "altw": "the codes as billed on the charts in the review: CPT codes on the visit's charges, and diagnoses in its claim file"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Charge: one record per charge line. cptCode is the procedure code as billed.",
+     "Claim: one record per electronic claim. claimData holds the text of the claim file.",
+     "Join Claim to the visit by patient and the service date in claimData. Claim has no visit ticket."
+    ],
+    "gaps": [
+     {
+      "v": "Codes matching the coder",
+      "t": "A certified coder codes the same charts on their own, without the AI's answer."
+     },
+     {
+      "v": "AI codes reviewed",
+      "t": "Get the AI's original code list from the vendor. The billed codes can include changes a person made, so label the stand-in an estimate."
+     }
+    ],
+    "checks": [
+     "Ask your analyst to read the diagnosis codes out of claimData and test it on a few claims. No other element holds billed diagnoses."
+    ],
+    "sheet": "Coding Accuracy Rate",
+    "desc": "Share of AI-assigned diagnosis or procedure codes that match certified coders working from the same documentation.",
+    "use": "Evaluates AI coding tools. Coding errors change payment amounts, HCC risk scores, and audit results.",
+    "bench": "Validate against certified coder review by specialty. For context, GPT-4 picked the correct ICD-10 code in 99 of 100 simulated nephrology cases in a 2024 study, but simulated cases are easier than real charts."
+   },
+   {
+    "id": "hcc",
+    "name": "HCC Coding Capture Rate",
+    "row": 26,
+    "s": "partly",
+    "main": "Claim",
+    "eq": [
+     "Capture rate = `HCCs coded` ÷ `Supported HCCs`"
+    ],
+    "vars": [
+     {
+      "n": "HCCs coded",
+      "d": "`Supported HCCs` that were coded on a claim this year. An HCC is a group of diagnoses that raises a patient's Medicare risk score, and so what Medicare pays.",
+      "x": "diagnosis codes in {Claim.claimData} mapped to HCCs with the [ICD-10 to HCC mapping|CMS file]",
+      "w": "claims for services this year, grouped by {Claim.patient.reference}, keeping the HCCs that are in `Supported HCCs`"
+     },
+     {
+      "n": "Supported HCCs",
+      "d": "Each patient's HCCs for the year that the chart backs up.",
+      "x": "[HCCs the chart supports for the year|chart review]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Conditions to review",
+      "x": "{Condition.code.coding:ICD10CODE.code} where {Condition.clinicalStatus} is active"
+     }
+    ],
+    "rows": [
+     "Claim: one record per electronic claim. claimData holds the text of the claim file, with its service dates.",
+     "Condition: one record per problem or health concern on the chart. clinicalStatus says whether it is still active.",
+     "Join Claim.patient and Condition.subject on the patient."
+    ],
+    "gaps": [
+     {
+      "v": "HCCs coded",
+      "t": "Download the CMS ICD-10 to HCC mapping that applies to the year."
+     },
+     {
+      "v": "Supported HCCs",
+      "t": "A reviewer reads the chart and confirms each condition is supported. Problem list entries only name candidates."
+     }
+    ],
+    "checks": [
+     "Count each patient, HCC and year once.",
+     "Ask your analyst to read the diagnosis codes out of claimData and test it on a few claims. No other element holds billed diagnoses."
+    ],
+    "sheet": "HCC Coding Capture Rate",
+    "desc": "Share of clinically supported Hierarchical Condition Category diagnoses that get documented and coded. Captured HCCs divided by all supported HCCs.",
+    "use": "Checks whether AI chart review finds every supported condition that affects Medicare Advantage risk scores. Missed HCCs lose revenue, and unsupported ones create audit risk.",
+    "bench": "Measure documentation-supported capture by HCC category. Use OIG's high-risk diagnosis groups as a check; OIG found about 70% of those codes were not supported in the records it reviewed."
+   },
+   {
+    "id": "appeals",
+    "name": "Appeals Resolution Rate",
+    "row": 42,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Resolution rate = `Appeals decided` ÷ `Appeals filed`, split by `Outcome`"
+    ],
+    "vars": [
+     {
+      "n": "Appeals decided",
+      "d": "`Appeals filed` that have a final decision from the payer.",
+      "x": "count [appeals with a final payer decision|decision letter]",
+      "w": "among the `Appeals filed`"
+     },
+     {
+      "n": "Appeals filed",
+      "d": "Denials your team appealed.",
+      "x": "[denials your team appealed|appeal log]"
+     },
+     {
+      "n": "Outcome",
+      "d": "What the payer decided: it reversed the denial (overturned), reversed part of it, kept it (upheld), or settled.",
+      "x": "[the payer's decision|decision letter]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Appeals filed",
+      "t": "The export has no denial or appeal records. Use the log your billing team keeps of appeals filed, with the claim and the date sent."
+     },
+     {
+      "v": "Appeals decided, Outcome",
+      "t": "Match each filed appeal to the payer's decision letter. Recovery and write-off amounts help you find cases, but they do not show what the payer decided."
+     }
+    ],
+    "checks": [],
+    "sheet": "Appeals Resolution Rate",
+    "desc": "Share of denied claims resolved through appeal, tracked by outcome: overturned, upheld, or settled.",
+    "use": "Shows whether AI-assisted denials hold up. A lot of overturns means the first calls were weak.",
+    "bench": "Share of appeals resolved on time and share overturned, partly overturned, or upheld, against the manual baseline. ACA Marketplace insurers upheld 66% of denials on internal appeal in 2024 (KFF)."
+   },
+   {
+    "id": "cost",
+    "name": "Cost Per Reviewed Case",
+    "row": 45,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Cost per case = `Program cost` ÷ `Cases reviewed`"
+    ],
+    "vars": [
+     {
+      "n": "Program cost",
+      "d": "Everything the AI review program cost in the period: staff time, vendor or model fees, appeals work and quality review.",
+      "x": "[fully loaded program cost|finance]"
+     },
+     {
+      "n": "Cases reviewed",
+      "d": "Cases whose review finished in the same period. The example here is CDI review, where staff check a chart's documentation.",
+      "x": "[cases whose review finished in the period|review tool log]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Program cost",
+      "t": "Ask finance for labor, vendor fees and other program costs over the same period."
+     },
+     {
+      "v": "Cases reviewed",
+      "t": "The export has no review queue or CDI records. Count the finished cases in the review tool's own log, over the same dates as the cost."
+     }
+    ],
+    "checks": [],
+    "sheet": "Cost Per Reviewed Case",
+    "desc": "Total operating cost of the AI review program divided by cases reviewed over a set period.",
+    "use": "Shows whether AI review costs less per case than manual review. Supports procurement and ROI decisions.",
+    "bench": "Fully loaded cost (labor, vendor or model fees, appeals handling, quality review) per reviewed case against the pre-deployment baseline."
+   }
+  ]
+ },
+ {
+  "grp": "Reliability",
+  "items": [
+   {
+    "id": "fpr",
+    "name": "False Positive Rate",
+    "row": 13,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "False positive rate = `Clean claims flagged` ÷ `Clean claims`"
+    ],
+    "vars": [
+     {
+      "n": "Clean claims flagged",
+      "d": "`Clean claims` the AI flagged anyway.",
+      "x": "count `Clean claims`",
+      "w": "the ones the AI flagged, from the [tool's list of flagged claims|vendor log]"
+     },
+     {
+      "n": "Clean claims",
+      "d": "Claims that an independent review finds were billed correctly.",
+      "x": "[claims a reviewer confirms are legitimate|independent review]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Clean claims flagged",
+      "t": "The export has no scrubber messages or AI flags on claims. Ask the vendor for the claims its tool flagged, with patient, service date and insurer for matching."
+     },
+     {
+      "v": "Clean claims",
+      "t": "Reviewers check a sample of flagged and unflagged claims. A claim that was paid with no denial has not been shown to be clean."
+     }
+    ],
+    "checks": [],
+    "sheet": "False Positive Rate",
+    "desc": "Share of legitimate claims the AI wrongly flags. False positives divided by all actual negatives.",
+    "use": "Tracks the burden on reviewers and providers. A high FPR means more record requests and denials on clean claims, which wears down provider trust.",
+    "bench": "Non-improper claims flagged divided by all non-improper claims in an adjudicated validation set, tracked at the chosen operating threshold."
+   },
+   {
+    "id": "esc",
+    "name": "Escalation Rate",
+    "row": 17,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Escalation rate = `Cases sent to a person` ÷ `AI cases`"
+    ],
+    "vars": [
+     {
+      "n": "Cases sent to a person",
+      "d": "`AI cases` the automation could not finish and handed to a person.",
+      "x": "[cases the handoff log confirms went to a person|vendor log]",
+      "w": "among the `AI cases`"
+     },
+     {
+      "n": "AI cases",
+      "d": "All the cases the AI processed.",
+      "x": "[cases processed by the AI|feature log]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Cases sent to a person",
+      "t": "The export has no work queues or coding status history. Take the cases the tool sent to a person from its handoff log."
+     },
+     {
+      "v": "AI cases",
+      "t": "Get the list of cases the AI handled from its feature log or the vendor. Use the same cases in both counts."
+     }
+    ],
+    "checks": [],
+    "sheet": "Escalation Rate",
+    "desc": "Share of AI-reviewed claims or cases sent to a human instead of resolved automatically.",
+    "use": "Checks whether uncertain or high-risk cases reach qualified reviewers. A falling rate as the model matures can mean better confidence, but check it against override and appeal results.",
+    "bench": "Set against reviewer capacity, payment and clinical risk tolerance, and historical unresolved-case rates by claim type and severity."
+   },
+   {
+    "id": "icd",
+    "name": "ICD-10 Coding Compliance Rate",
+    "row": 25,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Compliance rate = `Claims with no defect` ÷ `Claims audited`"
+    ],
+    "vars": [
+     {
+      "n": "Claims with no defect",
+      "d": "`Claims audited` that follow the coding guidelines, including specificity, order of codes and documentation support.",
+      "x": "[claims the coder finds have no defect|coder audit]",
+      "w": "among the `Claims audited`"
+     },
+     {
+      "n": "Claims audited",
+      "d": "Coded claims a certified coder audits.",
+      "x": "[claims picked for audit|coder audit]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Claims with no defect, Claims audited",
+      "t": "A certified coder audits a sample of claims against the official guidelines. The export has no coding edit results to start from."
+     }
+    ],
+    "checks": [],
+    "sheet": "ICD-10 Coding Compliance Rate",
+    "desc": "Share of coded claims that follow official ICD-10-CM and CPT guidelines, including specificity, sequencing, and documentation support.",
+    "use": "Checks whether AI coding tools follow the official guidelines. Misses can trigger RAC audits and risk adjustment corrections.",
+    "bench": "Target 100% adherence to the current guidelines (FY2027, effective Oct 1, 2026), measured as coding defects per audited claim. Retest after every annual update."
+   },
+   {
+    "id": "radv",
+    "name": "RADV Audit Accuracy",
+    "row": 27,
+    "s": "partly",
+    "main": "Claim, DocumentReference, Binary",
+    "eq": [
+     "Audit accuracy = `Supported diagnoses` ÷ `Diagnoses reviewed`"
+    ],
+    "vars": [
+     {
+      "n": "Supported diagnoses",
+      "d": "`Diagnoses reviewed` that the medical record backs up.",
+      "x": "[diagnoses a coder finds supported by the record|record review]",
+      "w": "among the `Diagnoses reviewed`, judged by reading the notes in {Binary.data}, found through {DocumentReference.content:InternalAttachment}"
+     },
+     {
+      "n": "Diagnoses reviewed",
+      "d": "Submitted diagnoses in the review sample that map to an HCC. An HCC is a group of diagnoses that raises a Medicare risk score.",
+      "x": "diagnosis codes in {Claim.claimData}",
+      "w": "codes that map to an HCC in the [ICD-10 to HCC mapping|CMS file], on the claims in the [review sample|record review]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Claim: one record per electronic claim. claimData holds the text of the claim file.",
+     "DocumentReference: one record per document version. content:InternalAttachment points at the note file in Binary.",
+     "Binary: one record per stored file. data holds the file, base64 encoded.",
+     "Join each claim to the notes for the same patient and service date. The coder does this while reading."
+    ],
+    "gaps": [
+     {
+      "v": "Supported diagnoses",
+      "t": "A coder reads the record for each diagnosis. RADV is the CMS audit that checks Medicare Advantage diagnoses against the chart, so label your own review a mock one."
+     },
+     {
+      "v": "Diagnoses reviewed",
+      "t": "Download the CMS ICD-10 to HCC mapping for the year, and pick the sample of submitted diagnoses to review."
+     }
+    ],
+    "checks": [
+     "Ask your analyst to read the diagnosis codes out of claimData and test it on a few claims. No other element holds billed diagnoses.",
+     "Attachments may be PDF or RTF files. Convert them to text before the review."
+    ],
+    "sheet": "Risk Adjustment Data Validation (RADV) Audit Accuracy",
+    "desc": "Share of submitted HCC codes that the medical record supports when CMS audits them.",
+    "use": "Checks whether AI-assisted coding holds up in an audit. RADV is how CMS recovers Medicare Advantage overpayments.",
+    "bench": "Share of submitted risk adjustment diagnoses that pass RADV-style medical record review."
+   },
+   {
+    "id": "docs",
+    "name": "Documentation Completeness Rate",
+    "row": 28,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Completeness rate = `Complete submissions` ÷ `Submissions reviewed`"
+    ],
+    "vars": [
+     {
+      "n": "Complete submissions",
+      "d": "`Submissions reviewed` that went out with every document the payer requires.",
+      "x": "[submissions that have all the required documents|payer policy]",
+      "w": "among the `Submissions reviewed`"
+     },
+     {
+      "n": "Submissions reviewed",
+      "d": "Claims and prior auth requests in the review sample.",
+      "x": "[claims and auth requests picked for review|submission review]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Complete submissions, Submissions reviewed",
+      "t": "A reviewer compares what was sent with the payer's list of required documents at the time. The export has no claim attachments or auth requests. Get them from the clearinghouse."
+     }
+    ],
+    "checks": [],
+    "sheet": "Documentation Completeness Rate",
+    "desc": "Share of claims or prior auth requests submitted with all required documentation.",
+    "use": "Tracks whether AI documentation tools cut submission gaps. Insufficient documentation drives most improper payments; it caused 77% of Medicaid improper payments in CMS's FY2025 report.",
+    "bench": "Share of reviewed claims with enough documentation for coverage, coding, and medical necessity review, compared to prior audit results and CMS error categories."
+   },
+   {
+    "id": "audit",
+    "name": "Audit Trail Completeness",
+    "row": 31,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Completeness = `Complete decisions` ÷ `Decisions checked`"
+    ],
+    "vars": [
+     {
+      "n": "Complete decisions",
+      "d": "`Decisions checked` whose log has all five parts: user, time, action, data accessed and reason.",
+      "x": "count [decisions whose log has all five parts|vendor log]",
+      "w": "among the `Decisions checked`"
+     },
+     {
+      "n": "Decisions checked",
+      "d": "The AI-assisted decisions in the review sample.",
+      "x": "[AI decisions picked for review|log review]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Complete decisions",
+      "t": "The EHI export has no audit log. Get the user, time, action, data read and reason for each decision from the vendor's log."
+     },
+     {
+      "v": "Decisions checked",
+      "t": "A reviewer picks the AI decisions to check and goes through all five parts for each one."
+     }
+    ],
+    "checks": [],
+    "sheet": "Audit Trail Completeness",
+    "desc": "Share of AI-assisted decisions with a complete log of user, timestamp, action, data accessed, and basis for the recommendation.",
+    "use": "Verifies that AI systems touching PHI keep the audit controls the HIPAA Security Rule requires.",
+    "bench": "Target 100% logging of the access, use, and decision actions defined in local HIPAA security policy."
+   },
+   {
+    "id": "denial",
+    "name": "Claims Denial Rate",
+    "row": 41,
+    "s": "partly",
+    "main": "Claim",
+    "eq": [
+     "Denial rate = `Claims denied` ÷ `Claims sent`"
+    ],
+    "vars": [
+     {
+      "n": "Claims denied",
+      "d": "`Claims sent` that the payer denied the first time it decided them. Denials for duplicate claims do not count.",
+      "x": "count [claims denied on first pass|835 remittance files]",
+      "w": "among the `Claims sent`, leaving out denials for duplicate claims"
+     },
+     {
+      "n": "Claims sent",
+      "d": "Claims sent for the first time to the patient's main insurer. Resubmitted and replacement claims, and claims sent to a second insurer, do not count.",
+      "x": "[claims sent for the first time to the main insurer|clearinghouse claim reports]",
+      "alt": "count distinct {Claim.id}",
+      "altw": "records where {Claim.transmissionStatus} = Transmitted. Resubmitted and secondary claims are still in."
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Claim: one record per electronic claim. transmissionStatus says whether the file went out, not what the payer decided."
+    ],
+    "gaps": [
+     {
+      "v": "Claims denied",
+      "t": "The export has no denials or remittances. Take first-pass denials from the 835 remittance files, matched to claims by patient, service date and insurer."
+     },
+     {
+      "v": "Claims sent",
+      "t": "Claim has no filing order and no resubmission flag. Get first-time primary claims from your clearinghouse reports, or label the stand-in an estimate."
+     }
+    ],
+    "checks": [
+     "Wait the same number of days for denials on every claim, and use the same duplicate rule, in every comparison.",
+     "The docs call a record both a claim and a claim file. Check that one record holds one claim before counting."
+    ],
+    "sheet": "Claims Denial Rate",
+    "desc": "Share of submitted claims denied on first pass, tracked by payer, service line, and denial reason.",
+    "use": "Watches for AI over-denial. A jump above the historical baseline should trigger human review.",
+    "bench": "Compare to the manual baseline and published figures: ACA Marketplace insurers denied 19% of in-network claims in 2024 (KFF), and a Health Affairs study found MA plans denied 17% of initial claims."
+   },
+   {
+    "id": "retain",
+    "name": "AI Audit Log Retention Compliance",
+    "row": 44,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "No arithmetic. The assessment is two answers: `Kept long enough` and `Protected from changes`."
+    ],
+    "vars": [
+     {
+      "n": "Kept long enough",
+      "d": "Whether logs of AI decisions are kept for the whole period your policy requires.",
+      "x": "[retention period setting|log platform settings]"
+     },
+     {
+      "n": "Protected from changes",
+      "d": "Whether the stored logs are tamper evident, so any change to them would show.",
+      "x": "[integrity setting on log storage|log platform settings]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Kept long enough, Protected from changes",
+      "t": "Check the retention and integrity settings on the platform that stores the logs. The EHI export has no audit log to spot check."
+     }
+    ],
+    "checks": [],
+    "sheet": "AI Audit Log Retention Compliance",
+    "desc": "Whether logs of AI-assisted decisions involving PHI are kept in tamper-proof storage for the required period.",
+    "use": "Makes sure decision records exist for future audits, investigations, and regulatory review.",
+    "bench": "Target 100% retention per local policy. HIPAA requires Security Rule documentation to be kept 6 years; many organizations use the same period for audit logs."
+   },
+   {
+    "id": "irr",
+    "name": "Inter-Rater Agreement on Escalated Cases",
+    "row": 47,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Agreement = `Cases agreed` ÷ `Cases compared`, or kappa from the same `Reviewer ratings`"
+    ],
+    "vars": [
+     {
+      "n": "Cases agreed",
+      "d": "`Cases compared` where every reviewer made the same call."
+     },
+     {
+      "n": "Cases compared",
+      "d": "`Escalated cases` rated by two or more reviewers."
+     },
+     {
+      "n": "Reviewer ratings",
+      "d": "Each reviewer's call on each of the `Escalated cases`, made without seeing the others' calls.",
+      "x": "[ratings from two or more reviewers|blinded review]"
+     },
+     {
+      "n": "Escalated cases",
+      "d": "Cases the AI handed to a person.",
+      "x": "[cases the AI handed to a person|vendor log]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Reviewer ratings",
+      "t": "Give the same cases to reviewers who cannot see one another's answers. Calls made one after another, where each person saw the last call, do not count as agreement."
+     },
+     {
+      "v": "Escalated cases",
+      "t": "The export has no work queues. Get the AI's handoff log to list the cases it sent to a person."
+     }
+    ],
+    "checks": [
+     "Kappa adjusts agreement for chance matches. Use Cohen's kappa for two reviewers and Fleiss' kappa for more, and say which you report."
+    ],
+    "sheet": "Inter-Rater Agreement on Escalated Cases",
+    "desc": "How often two or more qualified reviewers agree on the right call for AI-escalated cases, measured with Cohen's kappa or percent agreement.",
+    "use": "Low agreement means escalated cases are unclear, so escalation criteria or thresholds may need work.",
+    "bench": "Cohen's or Fleiss' kappa, or percent agreement, against local acceptance criteria. For reference, a 2025 study of AI-assisted coding in Taiwan reported kappa above 0.8 for some departments."
+   },
+   {
+    "id": "perm",
+    "name": "PERM Compliance Rate",
+    "row": 48,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Compliance rate = `Claims found correct` ÷ `Claims sampled`"
+    ],
+    "vars": [
+     {
+      "n": "Claims found correct",
+      "d": "`Claims sampled` that pass under the CMS Payment Error Rate Measurement (PERM) rules for Medicaid.",
+      "x": "[claims found correct|PERM review]"
+     },
+     {
+      "n": "Claims sampled",
+      "d": "Medicaid claims picked for the review.",
+      "x": "[claims sampled|PERM review]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Your Medicaid claims",
+      "x": "{Claim.id} where {Claim.insuranceCarrier.display} is your state Medicaid program or a Medicaid plan"
+     }
+    ],
+    "rows": [
+     "Claim: one record per electronic claim. insuranceCarrier is the insurer it went to."
+    ],
+    "gaps": [
+     {
+      "v": "Claims found correct, Claims sampled",
+      "t": "The findings come from a PERM review, outside athena. A rate from your own claims is a mock review, and official PERM estimates use their own sampling."
+     }
+    ],
+    "checks": [],
+    "sheet": "PERM Compliance Rate",
+    "desc": "Share of AI-adjudicated Medicaid claims that would count as correct under CMS's Payment Error Rate Measurement methods.",
+    "use": "Checks whether AI Medicaid review helps PERM results. Under H.R. 1 (2025), states over a 3% Medicaid eligibility error rate will have to repay part of the federal share starting in FY2030.",
+    "bench": "PERM state estimates are designed for a 95% confidence interval of plus or minus 3 percentage points. The national Medicaid improper payment rate was 6.12% in FY2025."
+   }
+  ]
+ },
+ {
+  "grp": "Usability: workflow",
+  "items": [
+   {
+    "id": "tat",
+    "name": "Claims Processing Turnaround Time",
+    "row": 19,
+    "s": "partly",
+    "main": "Payment, Claim",
+    "eq": [
+     "Turnaround time = the median of `Days to outcome` across claims",
+     "Days to outcome = `First outcome date` − `Send date`"
+    ],
+    "vars": [
+     {
+      "n": "First outcome date",
+      "d": "The first day the payer paid or denied the claim.",
+      "x": "earliest {Payment.checkDate} or [first denial date|835 remittance files]",
+      "w": "insurance payment records, with {Payment.insurancePayment.value} above zero, on the claim's {Payment.ticketNumber} and insurer"
+     },
+     {
+      "n": "Send date",
+      "d": "The day the claim was first sent to the payer.",
+      "x": "earliest {Claim.fileTransmitted}",
+      "w": "records for the claim, matched by {Claim.patient.reference}, {Claim.insuranceCarrier.reference} and the service date in {Claim.claimData}"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Payment: one record per payment entry on a visit. checkDate is the date of the payer's check or electronic payment.",
+     "Claim: one record per electronic claim. fileTransmitted is the day the claim file was sent.",
+     "Join Claim to Payment by patient and insurer, then by service date. Claim has no visit ticket."
+    ],
+    "gaps": [
+     {
+      "v": "First outcome date",
+      "t": "The export has no denials. Take the first denial date from the 835 remittance files."
+     }
+    ],
+    "checks": [
+     "Report claims still waiting for a payment or denial apart from the rest.",
+     "Pull a few claims by hand and confirm the claim to payment match before you trust it.",
+     "Where checkDate is blank, use dateOfEntry, the day staff entered the payment batch. It comes later than the payment, so report those claims apart."
+    ],
+    "sheet": "Claims Processing Turnaround Time",
+    "desc": "Time from claim submission to payment or denial, usually as median or mean days.",
+    "use": "Operational efficiency measure. AI review tools are usually judged on whether they beat manual turnaround.",
+    "bench": "Use the standard that applies, such as state prompt pay rules or contract terms, and compare to the pre-deployment baseline by claim type. CMS-0057-F timelines cover prior auth, not claims."
+   },
+   {
+    "id": "auto",
+    "name": "Automation Rate",
+    "row": 20,
+    "s": "partly",
+    "main": "Claim",
+    "eq": [
+     "Automation rate = `Cases with no human touch` ÷ `AI cases`"
+    ],
+    "vars": [
+     {
+      "n": "Cases with no human touch",
+      "d": "`AI cases` that went all the way through with no action by a person.",
+      "x": "[cases with no human action in the workflow|complete action log]",
+      "w": "among the `AI cases`, starting with claims whose {Claim.filedBy} is the tool's account and not a staff member"
+     },
+     {
+      "n": "AI cases",
+      "d": "All the cases the AI processed.",
+      "x": "[cases processed by the AI|feature log]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Claim: one record per electronic claim. filedBy is the name of the user who filed it."
+    ],
+    "gaps": [
+     {
+      "v": "Cases with no human touch",
+      "t": "Of the billing steps, the export records only who filed each claim. Check every step of the workflow for each case."
+     },
+     {
+      "v": "AI cases",
+      "t": "Get the list of cases the AI handled from its feature log or the vendor."
+     }
+    ],
+    "checks": [
+     "Ask your billing team whether filedBy names the person who sent a whole batch of claims. If it does, it says little about each claim."
+    ],
+    "sheet": "Automation Rate",
+    "desc": "Share of claims review, coding validation, or prior auth cases the AI handles end to end with no human touch.",
+    "use": "Measures efficiency gains. Read it with override and appeal rates, since automating bad decisions also pushes this number up.",
+    "bench": "Share of cases fully automated against the local historical workflow, split by claim type, risk tier, override rate, and appeal outcome."
+   },
+   {
+    "id": "workload",
+    "name": "Reviewer Workload Reduction",
+    "row": 21,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Reduction = ( `Rate before` − `Rate after` ) ÷ `Rate before`",
+     "Rate = 1,000 × `Review cases` ÷ `Eligible claims`"
+    ],
+    "vars": [
+     {
+      "n": "Rate before",
+      "d": "The `Rate` in the Before period: review cases per 1,000 claims."
+     },
+     {
+      "n": "Rate after",
+      "d": "The `Rate` in the After period."
+     },
+     {
+      "n": "Review cases",
+      "d": "Coding queries (questions sent to a physician about the chart) that a person acted on, each counted once.",
+      "x": "[coding queries a person acted on, counted once each|review tool log]"
+     },
+     {
+      "n": "Eligible claims",
+      "d": "Claims in the same workflow that could have gone to review.",
+      "x": "[eligible claim count|same workflow's volume report]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Review cases",
+      "t": "The export has no coding query records. Count the queries people acted on in each period from the query tool's log."
+     },
+     {
+      "v": "Eligible claims",
+      "t": "Count the claims that entered the same review workflow in each period, from that workflow's own volume report."
+     }
+    ],
+    "checks": [],
+    "sheet": "Reviewer Workload Reduction",
+    "desc": "Percent drop in cases or documents needing human review after AI triage goes live.",
+    "use": "Shows whether AI takes work off clinical reviewers and auditors. Measured as change in cases per reviewer per unit of time, before vs after.",
+    "bench": "Reviewer minutes per case, cases per reviewer-hour, and backlog before vs after, using the same time-and-motion method both times."
+   },
+   {
+    "id": "pa",
+    "name": "Prior Authorization Cycle Time",
+    "row": 22,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Cycle time = the median of `Hours to decision`, split by `Priority`",
+     "Hours to decision = `Decision time` − `Request time`"
+    ],
+    "vars": [
+     {
+      "n": "Priority",
+      "d": "How urgent the request is, as set on the referral.",
+      "x": "[urgent or standard, as sent to the payer|payer portal or auth tool log]"
+     },
+     {
+      "n": "Decision time",
+      "d": "When the request was first marked approved or denied.",
+      "x": "[time the payer approved or denied the request|payer portal or auth tool log]"
+     },
+     {
+      "n": "Request time",
+      "d": "When the auth request first went to the payer.",
+      "x": "[verified request start|submission log]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Auth numbers to match to the log",
+      "x": "{Charge.authDetailNum} and {Charge.referralDate} on each charge line"
+     }
+    ],
+    "rows": [
+     "Charge: one record per charge line. referralDate is the issue date of the auth or referral number, with no time of day."
+    ],
+    "gaps": [
+     {
+      "v": "Priority, Request time, Decision time",
+      "t": "The export has no prior auth requests. Get each request's urgency, send time and decision time from the payer portal or the auth tool's log."
+     }
+    ],
+    "checks": [],
+    "sheet": "Prior Authorization Cycle Time",
+    "desc": "Time from prior auth request to approval or denial, in hours or business days.",
+    "use": "Checks whether AI prior auth tools decide faster than manual clinician review.",
+    "bench": "Since Jan 1, 2026, CMS-0057-F requires Medicare Advantage, Medicaid, CHIP, and federal Exchange plans to decide urgent requests within 72 hours and standard requests within 7 calendar days. For commercial lines, use state law or contract terms."
+   }
+  ]
+ },
+ {
+  "grp": "Safety",
+  "items": [
+   {
+    "id": "overturn",
+    "name": "Denial Overturn Rate on Appeal",
+    "row": 18,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Overturn rate = `Appeals overturned` ÷ `Appeals decided`"
+    ],
+    "vars": [
+     {
+      "n": "Appeals overturned",
+      "d": "`Appeals decided` that the payer reversed in full or in part.",
+      "x": "count [appeals with a full or partial overturn|payer letter]",
+      "w": "among the `Appeals decided`"
+     },
+     {
+      "n": "Appeals decided",
+      "d": "Appealed denials with a final decision, counting only denials the payer made with help from AI.",
+      "x": "count [appealed denials with a final decision|payer letter]",
+      "w": "only on denials where the [payer used AI|payer decision log]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Appeals overturned",
+      "t": "The payer's letter shows the outcome. Recovered dollars alone do not prove the denial was reversed."
+     },
+     {
+      "v": "Appeals decided",
+      "t": "Only the payer knows whether AI helped make a denial, so ask for its decision log. The export has no denial or appeal records."
+     }
+    ],
+    "checks": [
+     "Report full and partial reversals separately.",
+     "Report appeals still waiting for a decision apart from the rest."
+    ],
+    "sheet": "Denial Overturn Rate on Appeal",
+    "desc": "Share of AI-assisted denials reversed on internal or external appeal. A high rate means the original denials were wrong.",
+    "use": "Proxy for over-denial in AI-assisted utilization management and prior auth. KFF found 80.7% of appealed Medicare Advantage prior auth denials were overturned in 2024, though only 11.5% of denials were appealed.",
+    "bench": "Compare the AI-assisted overturn rate to the manual denial baseline and published figures. A high rate should trigger a review of denial logic and documentation."
+   }
+  ]
+ },
+ {
+  "grp": "Fairness and bias management",
+  "items": [
+   {
+    "id": "override",
+    "name": "Human Override Rate",
+    "row": 16,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Override rate = `Rejected suggestions` ÷ `Suggestions decided`"
+    ],
+    "vars": [
+     {
+      "n": "Rejected suggestions",
+      "d": "`Suggestions decided` that a person turned down.",
+      "x": "count [suggestions a person turned down|vendor suggestion log]",
+      "w": "among the `Suggestions decided`"
+     },
+     {
+      "n": "Suggestions decided",
+      "d": "Coding queries the AI suggested that a person then accepted or turned down.",
+      "x": "[AI coding suggestions a person accepted or turned down|vendor suggestion log]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Rejected suggestions, Suggestions decided",
+      "t": "athena documents no AI marker and no coding suggestion record. Get each suggestion and the person's decision from the vendor's log."
+     }
+    ],
+    "checks": [
+     "Leave out suggestions nobody acted on and ones the system dismissed. Neither is a person's decision."
+    ],
+    "sheet": "Human Override Rate",
+    "desc": "Share of AI recommendations that human reviewers reverse.",
+    "use": "Shows whether reviewers trust the AI. A high rate points to model problems. A very low rate can mean reviewers are rubber-stamping.",
+    "bench": "Compare to historical reviewer behavior, split by reviewer, claim type, reason code, model version, and policy version."
+   },
+   {
+    "id": "dir",
+    "name": "Disparate Impact Ratio",
+    "row": 34,
+    "s": "partly",
+    "main": "Claim, Patient",
+    "eq": [
+     "Ratio = `Group rate` ÷ `Reference rate`",
+     "Rate = `Outcomes` ÷ `Cases`, for one `Group`"
+    ],
+    "vars": [
+     {
+      "n": "Group rate",
+      "d": "The `Rate` for the group you are checking."
+     },
+     {
+      "n": "Reference rate",
+      "d": "The `Rate` for the group you compare against."
+     },
+     {
+      "n": "Outcomes",
+      "d": "`Cases` with the adverse outcome. A denial is the example here.",
+      "x": "count distinct eligible claims",
+      "w": "`Cases` with a [first-pass denial|835 remittance files]"
+     },
+     {
+      "n": "Cases",
+      "d": "Eligible claims for people in the `Group`.",
+      "x": "count distinct {Claim.id}",
+      "w": "the claims you chose for people in the `Group`, matched on {Claim.patient.reference}. `Outcomes` is counted from the same set."
+     },
+     {
+      "n": "Group",
+      "d": "Patients, or providers, who share a trait such as race, ethnicity, sex or language.",
+      "x": "Patients: {Patient.extension:USCORERACE}, {Patient.extension:USCOREETHNICITY}, {Patient.gender} or {Patient.communication.language}\nProviders: [provider demographics|external provider data]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Claim: one record per electronic claim. patient points at the Patient record.",
+     "Patient: one record per patient. Race and ethnicity are named entries under extension, in the US Core format.",
+     "Join Claim.patient to Patient.id."
+    ],
+    "gaps": [
+     {
+      "v": "Outcomes",
+      "t": "The export has no denials. Take first-pass denials for the same claims from the 835 remittance files, matched by patient, service date and insurer."
+     },
+     {
+      "v": "Group",
+      "t": "athena has patient demographics. Provider traits such as race or ownership come from an outside provider data source."
+     }
+    ],
+    "checks": [
+     "Define the outcome, the eligible claims and the reference group before you count, and show the count in each group.",
+     "The race extension can hold several categories for one patient. Pick a rule for patients with more than one race and use it throughout."
+    ],
+    "sheet": "Disparate Impact Ratio",
+    "desc": "Rate of an AI outcome (such as being flagged or denied) for one group divided by the rate for a reference group. Ratios below 0.8 or above 1.25 are often flagged using the EEOC four-fifths rule.",
+    "use": "Checks whether fraud flags, denials, or audit selections fall harder on providers or patients in protected groups.",
+    "bench": "1.0 is parity. Use 0.8 to 1.25 as a screening range only; Fairlearn notes the four-fifths rule comes from US employment law and is often misapplied elsewhere."
+   },
+   {
+    "id": "dpd",
+    "name": "Demographic Parity Difference",
+    "row": 50,
+    "s": "partly",
+    "main": "Claim, Patient",
+    "eq": [
+     "Difference = `Group rate` − `Reference rate`",
+     "Rate = `Outcomes` ÷ `Cases`, for one `Group`"
+    ],
+    "vars": [
+     {
+      "n": "Group rate",
+      "d": "The `Rate` for the group you are checking."
+     },
+     {
+      "n": "Reference rate",
+      "d": "The `Rate` for the group you compare against."
+     },
+     {
+      "n": "Outcomes",
+      "d": "`Cases` with the adverse outcome. A denial is the example here.",
+      "x": "count distinct eligible claims",
+      "w": "`Cases` with a [first-pass denial|835 remittance files]"
+     },
+     {
+      "n": "Cases",
+      "d": "Eligible claims for people in the `Group`.",
+      "x": "count distinct {Claim.id}",
+      "w": "the claims you chose for people in the `Group`, matched on {Claim.patient.reference}. `Outcomes` is counted from the same set."
+     },
+     {
+      "n": "Group",
+      "d": "Patients, or providers, who share a trait such as race, ethnicity, sex or language.",
+      "x": "Patients: {Patient.extension:USCORERACE}, {Patient.extension:USCOREETHNICITY}, {Patient.gender} or {Patient.communication.language}\nProviders: [provider demographics|external provider data]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "Claim: one record per electronic claim. patient points at the Patient record.",
+     "Patient: one record per patient. Race and ethnicity are named entries under extension, in the US Core format.",
+     "Join Claim.patient to Patient.id."
+    ],
+    "gaps": [
+     {
+      "v": "Outcomes",
+      "t": "The export has no denials. Take first-pass denials for the same claims from the 835 remittance files, matched by patient, service date and insurer."
+     },
+     {
+      "v": "Group",
+      "t": "athena has patient demographics. Provider traits such as race or ownership come from an outside provider data source."
+     }
+    ],
+    "checks": [
+     "Fix the outcome, the eligible claims and the reference group before you count.",
+     "Report the difference in percentage points, with the count in each group and a confidence interval.",
+     "The race extension can hold several categories for one patient. Pick a rule for patients with more than one race and use it throughout."
+    ],
+    "sheet": "Demographic Parity Difference",
+    "desc": "Difference in flag or adverse decision rate between a protected group and a reference group. Zero means equal rates.",
+    "use": "Checks whether AI flags claims or providers tied to specific racial, ethnic, or geographic groups at higher rates.",
+    "bench": "Target 0, reported with confidence intervals. Equal flag rates aren't always correct if true improper payment rates differ, so read it with equal opportunity difference."
+   }
+  ]
+ },
+ {
+  "grp": "Transparency",
+  "items": [
+   {
+    "id": "explain",
+    "name": "Model Explainability Score",
+    "row": 30,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Explainability score = the average `Rubric score` across the AI outputs reviewed"
+    ],
+    "vars": [
+     {
+      "n": "Rubric score",
+      "d": "A reviewer's score for how well the AI explains one output, using a written rubric with a stated scale.",
+      "x": "[score on the rubric|reviewer]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Rubric score",
+      "t": "athena does not score explanations and documents no AI reason element. A reviewer scores a sample of AI outputs on a written rubric."
+     }
+    ],
+    "checks": [],
+    "sheet": "Model Explainability Score",
+    "desc": "Structured rating of how well the AI explains its outputs in plain terms, scored with a rubric or proxies like attribution coverage.",
+    "use": "Checks that claims review, coding, and fraud tools can justify their outputs to auditors, regulators, and providers contesting a decision.",
+    "bench": "Score against a local rubric: can a reviewer tell why it was flagged, what evidence supports it, which policy applies, and what to do next."
+   }
+  ]
+ },
+ {
+  "grp": "Privacy",
+  "items": [
+   {
+    "id": "phi",
+    "name": "PHI Minimum Necessary Access Compliance Rate",
+    "row": 43,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Compliance rate = `Access within scope` ÷ `Access events reviewed`"
+    ],
+    "vars": [
+     {
+      "n": "Access within scope",
+      "d": "`Access events reviewed` where the AI read only the patient data its task needed.",
+      "x": "[access events within the permitted scope|access log review]"
+     },
+     {
+      "n": "Access events reviewed",
+      "d": "Times the AI read patient data, in the review sample.",
+      "x": "[AI access events picked for review|access log]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Access within scope, Access events reviewed",
+      "t": "The export does not show what data the AI read. Get the AI's access log, and have a reviewer check each event against what the task needed."
+     }
+    ],
+    "checks": [],
+    "sheet": "PHI Minimum Necessary Access Compliance Rate",
+    "desc": "Share of AI system access to PHI that stays within the minimum needed for the task, measured through audit log review.",
+    "use": "Verifies the AI follows the HIPAA Privacy Rule minimum necessary standard. Claims review and fraud detection touch a lot of PHI, so access has to be scoped and documented.",
+    "bench": "Target 100% compliance with role-based access policy, outside HIPAA's listed exceptions (such as disclosures for treatment), checked through access logs and periodic audit."
+   }
+  ]
+ }
+];
+
+const S = { yes: 'Yes', partly: 'Partly', no: 'No' };
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// Where a variable stands: ok = in the export, p = partly, g = not in the export.
+// A variable takes on the sources of every variable its definition or source line names.
+function kinds(m) {
+  const info = {};
+  const refs = s => [...s.matchAll(/`([^`]+)`/g)].map(a => a[1]);
+  m.vars.forEach(v => {
+    const src = [v.x, v.w, v.alt, v.altw].filter(Boolean).join(' ');
+    const own = new Set();
+    if (/\{[A-Za-z][A-Za-z0-9_]*\./.test(src)) own.add('e');
+    if (/\[[^\]|]+\|/.test(src)) own.add('g');
+    info[v.n] = { own, refs: new Set(refs(v.d + ' ' + src)) };
+  });
+  m.eq.forEach(line => {
+    const i = line.indexOf(' = ');
+    if (i < 0) return;
+    const lhs = line.slice(0, i).trim();
+    info[lhs] = info[lhs] || { own: new Set(), refs: new Set() };
+    refs(line.slice(i + 3)).forEach(r => info[lhs].refs.add(r));
+  });
+  const walk = (n, seen) => {
+    if (!info[n] || seen.includes(n)) return new Set();
+    const out = new Set(info[n].own);
+    info[n].refs.forEach(r => walk(r, seen.concat(n)).forEach(x => out.add(x)));
+    return out;
+  };
+  const K = {};
+  Object.keys(info).forEach(n => { const s = walk(n, []); K[n] = s.has('g') ? (s.has('e') ? 'p' : 'g') : 'ok'; });
+  return K;
+}
+
+const tok = (n, K) => `<span class="tok ${K[n] && K[n] !== 'ok' ? K[n] : ''}">${esc(n)}</span>`;
+const link = (t) => CFG.link === 'epic' ? `https://open.epic.com/EHITables/GetTable/${t}.htm`
+  : CFG.link === 'athena' ? `https://docs.mydata.athenahealth.com/fhir-r4/StructureDefinition-athena-${CFG.pages[t] || t.toLowerCase()}-profile.html` : '';
+const chip = (t, c, row) => {
+  const inner = `<span class="tb">${t}</span>${c}${row ? `<span class="rw">${row}</span>` : ''}`;
+  return CFG.link ? `<a class="v" href="${link(t)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : `<span class="v">${inner}</span>`;
+};
+
+// One pass over a string: {TABLE.COLUMN} chips, [need|source] boxes, `variable` names, and bare table or column names.
+const NAMES = CFG.names.join('|');
+const CODE = CFG.link === 'athena'
+  ? `\\b((?:${NAMES})\\.[A-Za-z][A-Za-z0-9_.:\\-]*[A-Za-z0-9])`
+  : `\\b((?:[A-Z][A-Z0-9]*_[A-Z0-9_]+${NAMES ? '|' + NAMES : ''})(?:\\.[A-Z][A-Z0-9_]+)?)\\b`;
+const RX = new RegExp('\\{([A-Za-z][A-Za-z0-9_]*)\\.([A-Za-z0-9_.:\\-\\[\\]]+)\\}|\\[([^\\]|]+)\\|([^\\]]+)\\]|`([^`]+)`|' + CODE, 'g');
+// R maps a table to what one of its rows is. swap maps a variable name to the box that replaces it in a formula line.
+const rich = (s, K, src, R, swap) => esc(s).replace(RX, (all, t, c, need, from, ref, code) => {
+  if (t) return src ? chip(t, c, R && R[t]) : `<code>${t}.${c}</code>`;
+  if (need) return src ? `<span class="x"><span>${need}</span><span class="src">${from}</span></span>` : `${need} (${from})`;
+  if (ref) { const name = ref.replace(/&amp;/g, '&'); return swap && swap[name] ? swap[name]() : (K[name] !== undefined ? tok(ref, K) : ref); }
+  return `<code>${code}</code>`;
+});
+const rowLine = (s, K) => {
+  const m = /^([A-Za-z][A-Za-z0-9_]*): (.*)$/.exec(s);
+  return m ? `<code>${m[1]}</code>: ${rich(m[2], K, false)}` : rich(s, K, false);
+};
+
+const sum = document.getElementById('summary');
+const det = document.getElementById('detail');
+const all = DATA.flatMap(g => g.items);
+const n = k => all.filter(m => m.s === k).length;
+document.getElementById('counts').textContent = `${n('yes')} are yes, ${n('partly')} partly and ${n('no')} no`;
+DATA.forEach(g => {
+  sum.insertAdjacentHTML('beforeend', `<tr class="grp"><td colspan="3">${esc(g.grp)}</td></tr>`);
+  det.insertAdjacentHTML('beforeend', `<h2>${esc(g.grp)}</h2>`);
+  g.items.forEach(m => {
+    const K = kinds(m);
+    const mains = m.main === 'none' ? 'none' : m.main.split(',').map(t => `<code>${esc(t.trim())}</code>`).join(', ');
+    sum.insertAdjacentHTML('beforeend', `<tr><td><a href="#${m.id}">${esc(m.name)}</a></td><td><span class="status ${m.s}">${S[m.s]}</span></td><td>${mains}</td></tr>`);
+    // What one row of each table on this card is, to print inside the chips.
+    const R = {};
+    m.rows.forEach(x => { const p = /^([A-Za-z][A-Za-z0-9_]*): (one (?:row|record) per [^.]+)\./.exec(x); if (p) R[p[1]] = esc(p[2]); });
+    // A source read two ways ("Professional billing: ...", "Hospital billing: ...") gets one labelled line per reading.
+    const labelled = (l, f) => { const p = /^([A-Z][A-Za-z' ]{2,40}): (.*)$/.exec(l); return p ? `<span class="lab">${esc(p[1])}:</span> ${f(p[2])}` : f(l); };
+    const full = t => rich(t, K, true, R);
+    const plain = t => rich(t, K, true);
+    const body = t => { const lines = t.split('\n'); return lines.length === 1 ? full(lines[0]) : lines.map(l => `<span class="rd">${labelled(l, full)}</span>`).join(''); };
+    const leaf = m.vars.filter(v => v.x);
+    // The formula again, each variable that has a source swapped for a box holding that source.
+    const placed = new Set(), swap = {};
+    leaf.forEach(v => { swap[v.n] = () => { placed.add(v.n); return `<span class="grp ${K[v.n] !== 'ok' ? K[v.n] : ''}"><span class="gl">${esc(v.n)}</span><span class="gb">${body(v.x)}</span></span>`; }; });
+    const fx = m.eq.filter(l => [...l.matchAll(/`([^`]+)`/g)].some(a => swap[a[1]]))
+      .map(l => `<div class="ln fx">${rich(l, K, true, R, swap)}</div>`).join('');
+    const rest = leaf.filter(v => !placed.has(v.n)).map(v => `<div class="ln fx">${tok(v.n, K)} <span class="is">=</span> <span class="grp ${K[v.n] === 'g' ? 'g' : ''}"><span class="gb">${body(v.x)}</span></span></div>`).join('');
+    const stand = leaf.filter(v => v.alt).map(v => `<div class="ln fx"><span class="lab">Stand-in from the export:</span> ${tok(v.n, K)} <span class="is">&asymp;</span> <span class="grp"><span class="gb">${body(v.alt)}</span></span></div>`).join('');
+    const wbody = t => t.split('\n').map(l => labelled(l, plain)).join('<br>');
+    const wl = [];
+    leaf.forEach(v => {
+      if (v.w) wl.push(`<div class="ln wr">${tok(v.n, K)} ${wbody(v.w)}</div>`);
+      if (v.altw) wl.push(`<div class="ln wr">${tok(v.n, K)} <span class="lab">stand-in:</span> ${wbody(v.altw)}</div>`);
+    });
+    const src = fx + rest + stand
+      + (wl.length ? `<div class="sep">Which ${CFG.rowWord}s count</div>` + wl.join('') : '')
+      + (m.extra.length ? `<div class="sep">Also in the export, not part of the formula</div>`
+        + m.extra.map(e => `<div class="ln wr"><span class="lab">${esc(e.n)}:</span> ${plain(e.x)}</div>`).join('') : '');
+    const rows = m.rows.length ? `<ul>${m.rows.map(x => `<li>${rowLine(x, K)}</li>`).join('')}</ul>`
+      : `<span class="none">None. No variable on this card comes from the export.</span>`;
+    const gaps = m.gaps.length ? `<ul class="gaps">${m.gaps.map(x => `<li><div class="gv">${x.v.split(',').map(v => tok(v.trim(), K)).join(' ')}</div>${rich(x.t, K, false)}</li>`).join('')}</ul>`
+      : `<span class="none">None. Every variable is in the export.</span>`;
+    const checks = m.checks.length ? `<ul>${m.checks.map(x => `<li>${rich(x, K, false)}</li>`).join('')}</ul>` : `<span class="none">None.</span>`;
+    det.insertAdjacentHTML('beforeend', `
+      <div class="m" id="${m.id}">
+        <h3>${esc(m.name)}</h3>
+        <div class="top"><span class="status ${m.s}">${S[m.s]}</span>${m.sheet !== m.name ? `<span>Spreadsheet name: ${esc(m.sheet)}</span>` : ''}</div>
+        <dl class="sheet">
+          <dt>Description</dt><dd>${esc(m.desc)}</dd>
+          <dt>Intended use</dt><dd>${esc(m.use)}</dd>
+          <dt>Benchmark</dt><dd>${esc(m.bench)}</dd>
+        </dl>
+        <dl>
+          <dt>Formula</dt><dd><div class="eq">${m.eq.map(l => `<div>${rich(l, K, false)}</div>`).join('')}</div></dd>
+          <dt>Variables</dt><dd><dl class="vars">${m.vars.map(v => `<dt>${tok(v.n, K)}</dt><dd>${rich(v.d, K, false)}</dd>`).join('')}</dl></dd>
+          <dt>${CFG.inLabel}</dt><dd class="wide"><div class="f">${src}</div></dd>
+          <dt>${CFG.rowsLabel}</dt><dd>${rows}</dd>
+          <dt>Gaps</dt><dd>${gaps}</dd>
+          <dt>Checks</dt><dd>${checks}</dd>
+        </dl>
+      </div>`);
+  });
+});
+// The cards are drawn after load, so a link straight to one card needs a nudge.
+if (location.hash.length > 1) { const el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
+</script>
+</body>
+</html>

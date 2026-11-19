@@ -125,6 +125,7 @@ td a:hover { text-decoration: underline; }
   .words dd { margin-bottom: 8px; }
 }
 .nav { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 28px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.nav.use { margin-bottom: 10px; }
 .nav .lbl { color: var(--fg-3); }
 .nav a { color: var(--fg-2); text-decoration: none; padding-bottom: 2px; border-bottom: 2px solid transparent; }
 .nav a:hover { color: var(--fg); border-bottom-color: var(--line); }
@@ -133,6 +134,7 @@ td a:hover { text-decoration: underline; }
 </head>
 <body>
 <div class="page">
+<nav class="nav use" aria-label="Use case"><span class="lbl">Use case:</span><a href="athena.html" aria-current="page">Ambient AI</a><a href="pi-athena.html">Program Integrity</a><a href="cds-athena.html">Clinical Decision Support</a></nav>
 <nav class="nav" aria-label="EHR system"><span class="lbl">Ambient AI metrics in the EHI export of:</span><a href="index.html">Epic</a><a href="oracle.html">Oracle Health</a><a href="athena.html" aria-current="page">athenahealth</a></nav>
 
 <h1>Can athenahealth's EHI export score the ambient AI metrics?</h1>

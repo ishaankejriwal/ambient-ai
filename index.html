@@ -4,35 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Ambient AI Metrics in the Epic Export</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Specific Epic EHI tables and columns inside formulas for the CHAI Ambient AI metrics, with row definitions and missing inputs.">
+<meta name="description" content="Each CHAI ambient AI metric as a plain formula, with the Epic EHI export table and column behind every variable and the pieces Epic does not have.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-
-
-
-
-
-
-
-/* One reading column. Summary table first, then one entry per metric with a formula block. */
+/* One reading column. Summary table first, then one card per metric. Every card has the same parts in the same order. */
 :root {
-  --bg: #ffffff;
-  --fg: #1c1c1c;
-  --fg-2: #555555;
-  --fg-3: #8a8a8a;
-  --line: #dddddd;
-  --line-2: #efefef;
-  --f-bg: #f7f7f5;
-  --accent: #1f4e79;
-  --yes: #2e7d32;
-  --partly: #c77d00;
-  --no: #9e9e9e;
-  --miss: #b3261e;
-  --miss-bg: #fff6f5;
-  --mono-fg: #333333;
+  --bg: #ffffff; --fg: #1c1c1c; --fg-2: #555555; --fg-3: #8a8a8a;
+  --line: #dddddd; --line-2: #efefef; --f-bg: #f7f7f5;
+  --accent: #1f4e79; --yes: #2e7d32; --partly: #c77d00; --no: #9e9e9e;
+  --miss: #b3261e; --miss-bg: #fff6f5; --part-bg: #fff9ee; --mono-fg: #333333;
   --sans: 'Atkinson Hyperlegible', 'Segoe UI', Arial, sans-serif;
   --mono: 'IBM Plex Mono', Consolas, monospace;
   color-scheme: light;
@@ -40,38 +22,33 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #161616; --fg: #e8e8e8; --fg-2: #b0b0b0; --fg-3: #7a7a7a; --line: #333333; --line-2: #262626; --f-bg: #1d1d1d;
-    --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --mono-fg: #cfcfcf;
+    --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --part-bg: #2a2416; --mono-fg: #cfcfcf;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #161616; --fg: #e8e8e8; --fg-2: #b0b0b0; --fg-3: #7a7a7a; --line: #333333; --line-2: #262626; --f-bg: #1d1d1d;
-  --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --mono-fg: #cfcfcf;
+  --accent: #8fb8e0; --yes: #6fcf75; --partly: #e6a93c; --no: #777777; --miss: #f28b82; --miss-bg: #2a1c1b; --part-bg: #2a2416; --mono-fg: #cfcfcf;
   color-scheme: dark;
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { font-family: var(--sans); background: var(--bg); color: var(--fg); font-size: 16px; line-height: 1.55; }
 a { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
 .page { max-width: 920px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 48px 64px; }
-
 h1 { font-size: 30px; line-height: 1.2; font-weight: 700; margin-bottom: 14px; text-wrap: balance; }
 h2 { font-size: 21px; font-weight: 700; margin: 44px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
-h3 { font-size: 17px; font-weight: 700; margin: 34px 0 4px; }
+h3 { font-size: 18px; font-weight: 700; margin: 34px 0 4px; }
 p { margin-bottom: 12px; max-width: 70ch; text-wrap: pretty; }
 p.small, li.small { font-size: 14px; color: var(--fg-2); }
 ul { padding-left: 20px; margin-bottom: 12px; max-width: 70ch; }
 li { margin-bottom: 5px; }
-code { font-family: var(--mono); font-size: 13.5px; color: var(--mono-fg); }
-
+code { font-family: var(--mono); font-size: .86em; color: var(--mono-fg); overflow-wrap: anywhere; }
 .status { font-weight: 700; white-space: nowrap; }
 .status::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: var(--c); transform: translateY(-1px); }
 .yes { --c: var(--yes); } .partly { --c: var(--partly); } .no { --c: var(--no); }
-
 .tbl-wrap { overflow-x: auto; margin: 12px 0 8px; }
 table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
 th { text-align: left; font-size: 13px; color: var(--fg-2); font-weight: 700; padding: 6px 10px 6px 0; border-bottom: 2px solid var(--fg); }
@@ -80,67 +57,73 @@ td:last-child, th:last-child { padding-right: 0; }
 tr.grp td { padding-top: 16px; font-weight: 700; color: var(--fg-2); font-size: 13px; border-bottom: 0; }
 td a { color: inherit; text-decoration: none; }
 td a:hover { text-decoration: underline; }
-td code { font-size: 12.5px; }
 
-/* Words box */
-.words { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; margin: 10px 0 16px; font-size: 14.5px; max-width: 70ch; }
-.words dt { font-weight: 700; float: left; clear: left; width: 70px; }
-.words dd { margin-left: 80px; margin-bottom: 6px; }
-.words dd:last-child { margin-bottom: 0; }
+/* Definition boxes in the intro. */
+.words { display: grid; grid-template-columns: var(--dtw, 90px) minmax(0, 1fr); gap: 7px 14px; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; margin: 10px 0 16px; font-size: 14.5px; max-width: 78ch; }
+.words dt { font-weight: 700; }
+.words.parts { --dtw: 150px; }
+.words.gloss { --dtw: 150px; }
 
-/* Formula block. Solid chip = a column in the export. Dashed chip = not in the export, with a tag saying where it comes from. */
-.f { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 7px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--f-bg); font-family: var(--mono); font-size: 13px; line-height: 1.35; color: var(--fg); }
-.f .v { display: inline-flex; flex-direction: column; padding: 3px 7px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--mono-fg); font-weight: 500; }
+/* A variable. Solid = in the export. Amber dashed = partly. Red dashed = not in the export. */
+.tok { display: inline-block; padding: 0 6px; border: 1px solid var(--fg-3); border-radius: 4px; background: var(--bg); line-height: 1.45; font-size: .94em; }
+.tok.p { border: 1.5px dashed var(--partly); background: var(--part-bg); }
+.tok.g { border: 1.5px dashed var(--miss); background: var(--miss-bg); }
+
+/* Source lines. Solid chip = a column in the export, table on top. Red dashed box = not in the export, with where to get it. */
+.f { padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--f-bg); font-size: 13.5px; color: var(--fg); }
+.f .ln { line-height: 2.75; padding: 3px 0; }
+.f .ln + .ln { border-top: 1px solid var(--line); }
+.f .ln.more { border-top: 0; padding-top: 0; padding-left: 18px; }
+.f .is { color: var(--fg-3); margin: 0 3px; }
+.f .lab { color: var(--fg-2); font-size: 12.5px; }
+.f .sep { font-size: 12.5px; color: var(--fg-2); font-weight: 700; padding: 9px 0 0; border-top: 1px solid var(--line); line-height: 1.4; }
+.f .sep + .ln { border-top: 0; }
+.f .v, .f .x { display: inline-flex; flex-direction: column; vertical-align: middle; line-height: 1.35; max-width: 100%; overflow-wrap: anywhere; padding: 3px 7px 4px; border-radius: 4px; }
+.f .v { border: 1px solid var(--line); background: var(--bg); color: var(--mono-fg); font-family: var(--mono); font-size: 13px; font-weight: 500; text-decoration: none; }
+.f a.v:hover { border-color: var(--accent); }
 .f .v .tb { font-size: 10.5px; font-weight: 400; color: var(--fg-3); letter-spacing: .02em; }
 .f .v .tb::after { content: " table"; font-family: var(--sans); }
-.f .v .tb.only::after { content: ""; }
-.f .x { display: inline-flex; flex-direction: column; padding: 3px 7px 4px; border: 1.5px dashed var(--miss); border-radius: 4px; background: var(--miss-bg); color: var(--fg); font-family: var(--sans); font-size: 13px; }
+.f .x { border: 1.5px dashed var(--miss); background: var(--miss-bg); font-size: 13px; }
 .f .x .src { font-size: 10.5px; color: var(--miss); font-weight: 700; }
 .f .x .src::before { content: "not in Epic · get from "; font-weight: 400; }
-.f .br { flex-basis: 100%; height: 0; }
-.f .ln { display: contents; }
-.f .ln > span.t { font-family: var(--sans); font-size: 12.5px; color: var(--fg-2); min-width: 100%; margin: 4px 0 -2px; }
-.f .ln > span.t:first-child { margin-top: 0; }
-.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; color: var(--fg-2); margin: 6px 0 14px; }
-.legend .f { padding: 4px 8px; gap: 6px; }
+.legend-f { display: inline-block; padding: 0; border: 0; background: none; vertical-align: middle; }
 
-.m { padding: 4px 0 20px; border-bottom: 1px solid var(--line-2); scroll-margin-top: 20px; }
-.m .top { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 10px; }
-.m dl { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px 14px; font-size: 15px; }
+/* A card. */
+.m { padding: 4px 0 22px; border-bottom: 1px solid var(--line-2); scroll-margin-top: 20px; }
+.m .top { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 12px; }
+.m dl { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px 14px; font-size: 15px; }
 .m dt { color: var(--fg-3); font-size: 13px; padding-top: 2px; }
 .m dd { min-width: 0; max-width: 78ch; }
 .m dd.wide { max-width: none; }
-.m dd p { margin-bottom: 8px; }
-.m dd p:last-child { margin-bottom: 0; }
-.m dd ul { margin: 0; padding-left: 18px; }
-.m dd ul li { font-size: 14.5px; margin-bottom: 3px; }
-.m dd ul.src li { color: var(--fg-2); font-size: 14px; }
-.m dd code { display: inline-block; }
-
+.m dd ul { margin: 0; padding-left: 18px; max-width: none; }
+.m dd ul li { font-size: 14.5px; margin-bottom: 4px; }
+.m dd ul.gaps { list-style: none; padding-left: 0; }
+.m dd ul.gaps li { margin-bottom: 9px; }
+.m dd ul.gaps .gv { margin-bottom: 2px; }
+.m dd dl.vars { grid-template-columns: max-content minmax(0, 1fr); gap: 7px 12px; font-size: 14.5px; }
+.m dd dl.vars dt { color: inherit; font-size: inherit; padding-top: 0; max-width: 240px; }
+.f .ln.fx { font-size: 15px; line-height: 2.1; padding: 5px 0; }
+.f .ln.wr { line-height: 2.5; }
+.f .grp { display: inline-flex; flex-direction: column; vertical-align: middle; margin: 4px 3px; padding: 2px 7px 5px; border: 1px solid var(--fg-3); border-radius: 6px; background: var(--bg); max-width: 100%; font-size: 13.5px; line-height: 2; }
+.f .grp.p { border: 1.5px dashed var(--partly); background: var(--part-bg); }
+.f .grp.g { border: 1.5px dashed var(--miss); background: var(--miss-bg); }
+.f .grp.g .x { border: 0; background: none; padding: 0; }
+.f .grp .gl { font-size: 11.5px; font-weight: 700; color: var(--fg-2); line-height: 1.6; }
+.f .rd { display: block; }
+.f .v .rw { font-family: var(--sans); font-size: 10.5px; font-weight: 400; color: var(--fg-3); max-width: 190px; overflow-wrap: break-word; }
+.f .grp .v, .f .grp .x { margin: 2px 0; }
+.m dl.sheet { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; margin-bottom: 16px; grid-template-columns: 98px minmax(0, 1fr); gap: 8px 14px; font-size: 14.5px; color: var(--fg-2); }
+.m dl.sheet dd { white-space: pre-line; }
+.m .eq { font-size: 15.5px; line-height: 2.05; }
+.m .eq div + div { font-size: 14.5px; color: var(--fg-2); }
+.m .none { color: var(--fg-2); font-size: 14.5px; }
 @media (max-width: 600px) {
-  .m dl { grid-template-columns: 1fr; gap: 2px 0; }
+  .m dl, .m dl.sheet, .m dd dl.vars { grid-template-columns: 1fr; gap: 2px 0; }
+  .m dd dl.vars dt { margin-top: 6px; }
   .m dt { margin-top: 10px; }
-  .words dt { float: none; width: auto; }
-  .words dd { margin-left: 0; }
+  .words { grid-template-columns: 1fr; gap: 2px 0; }
+  .words dd { margin-bottom: 8px; }
 }
-
-
-
-
-
-
-/* Visible chip formula refinements */
-.f a.v { text-decoration: none; }
-.f a.v:hover { border-color: var(--accent); }
-.f .v, .f .x { max-width: 100%; overflow-wrap: anywhere; }
-.f .ln { display: block; flex-basis: 100%; min-width: 0; line-height: 2.5; }
-.f .ln > span.t { display: block; line-height: 1.4; }
-.f .v, .f .x { vertical-align: middle; line-height: 1.35; }
-.f .br { display: none; }
-.m dd code { overflow-wrap: anywhere; max-width: 100%; }
-
-
-/* Site nav: the three systems, current one underlined. */
 .nav { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; font-size: 14px; color: var(--fg-2); margin-bottom: 28px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .nav .lbl { color: var(--fg-3); }
 .nav a { color: var(--fg-2); text-decoration: none; padding-bottom: 2px; border-bottom: 2px solid transparent; }
@@ -151,22 +134,30 @@ td code { font-size: 12.5px; }
 <body>
 <div class="page">
 <nav class="nav" aria-label="EHR system"><span class="lbl">Ambient AI metrics in the EHI export of:</span><a href="index.html" aria-current="page">Epic</a><a href="oracle.html">Oracle Health</a><a href="athena.html">athenahealth</a></nav>
+
 <h1>Can Epic's EHI export score the ambient AI metrics?</h1>
-<p>The framework spreadsheet lists 20 metrics for ambient AI scribes. Each metric shows the calculation in words, then with Epic tables and columns, followed by row definitions and gaps. Missing inputs are marked in red, with where to get them.</p>
-<p>Of the 20 metrics, <span id="counts"></span>. Partly means Epic supplies some inputs, such as notes to review or patient groups; a vendor, survey or reviewer supplies the rest.</p>
+<p>The framework spreadsheet lists 20 metrics for ambient AI scribes. This page writes each one as a formula in plain words, then shows which Epic EHI export table and column supplies each piece of it. Pieces Epic does not have are marked in red, with where to get them.</p>
+<p>Of the 20 metrics, <span id="counts"></span>. Partly means Epic has some of the inputs, such as the notes to review or the patient groups, and a vendor, a survey or a reviewer supplies the rest.</p>
+<p class="small">The same 20 cards exist for <a href="oracle.html">Oracle Health</a> and <a href="athena.html">athenahealth</a>. The formula and the variables are the same on all three pages, and only the tables and columns change.</p>
 
 <h2>Table, row and column</h2>
-<dl class="words"><dt>Table</dt><dd>One file in the export, like one tab of a spreadsheet. <code>PAT_ENC</code> is the visits table.</dd>
-<dt>Row</dt><dd>One record in that file. In <code>PAT_ENC</code>, a row is one visit. In <code>HNO_INFO</code>, a row is one note.</dd>
-<dt>Column</dt><dd>One attribute of a record. <code>PAT_ENC.CONTACT_DATE</code> is the visit date.</dd></dl>
+<dl class="words"><dt>Table</dt><dd>One file in the export, like one tab of a spreadsheet. <code>PAT_ENC</code> is the visits table.</dd><dt>Row</dt><dd>One line in that table. In <code>PAT_ENC</code> one row is one visit. In <code>HNO_INFO</code> one row is one note.</dd><dt>Column</dt><dd>One fact that every row has. <code>PAT_ENC.CONTACT_DATE</code> is the visit date.</dd></dl>
+<p class="small">Most formulas count rows, so each card says what one row stands for in every table it uses, and each chip in a formula repeats it.</p>
 
-<h2>How to read a formula</h2>
-<div class="legend">
-  <div class="f"><span class="v"><span class="tb">HNO_INFO</span>CREATE_INSTANT_DTTM</span></div><span>Epic table on top, its column below. Click a formula chip to open the table's schema.</span>
-  <div class="f"><span class="x"><span>the input you still need</span><span class="src">its source</span></span></div><span>an input outside the export</span>
-</div>
-<p class="small">Each metric has the same four rows: the calculation in words, the calculation with table-and-column chips, what a row means, and the gaps. Rates are fractions; multiply by 100 to display a percent. Percentage-point formulas include that conversion. Count each case once; a zero denominator gives N/A.</p>
-<p class="small">Yes means the export can supply the calculation's inputs after local validation. Partly means some inputs or the sampling frame are in Epic. No means the metric itself needs another source. A supporting measure is labeled separately from the metric. Before and after refer to fixed periods around clinician adoption. Confirm the adoption date against the rollout record. Provider names can overlap, so use a verified clinician identifier when grouping results.</p>
+<h2>How to read a card</h2>
+<p>Each metric has one card, and every card has the same parts in the same order.</p>
+<dl class="words parts">
+  <dt>Description, Intended use, Benchmark</dt><dd>Copied word for word from the spreadsheet.</dd>
+  <dt>Formula</dt><dd>The metric as an equation in plain words. Each boxed word is a variable.</dd>
+  <dt>Variables</dt><dd>What each boxed word means.</dd>
+  <dt>In Epic</dt><dd>The same formula again, with each variable swapped for the data behind it. <span class="f legend-f"><span class="v"><span class="tb">HNO_INFO</span>CREATE_INSTANT_DTTM<span class="rw">one row per note</span></span></span> reads: the column <code>CREATE_INSTANT_DTTM</code>, from the table <code>HNO_INFO</code>, where there is one row per note. <span class="f legend-f"><span class="x"><span>what you still need</span><span class="src">its source</span></span></span> is something Epic does not have, with where to get it. Under the formula, "Which rows count" says which rows of each table go in. Click a chip to open that table on Epic's site.</dd>
+  <dt>Tables and rows</dt><dd>What one row of each table stands for, and how the tables join.</dd>
+  <dt>Gaps</dt><dd>Each variable Epic does not have, and how to get it.</dd>
+  <dt>Checks</dt><dd>What to confirm in your own export before you trust the number.</dd>
+</dl>
+<p>The box around a variable shows where it stands. <span class="tok">Visits</span> is in the export. <span class="tok p">Note time</span> is partly there: the export has a stand-in or part of the answer, and the rest comes from somewhere else. <span class="tok g">Survey score</span> is not in the export.</p>
+<p>The status beside each metric's name follows from those boxes. Yes means every variable is in the export. Partly means some are, or the export has a stand-in. No means none are. Some cards end the In Epic part with "Also in the export". Those are columns that help but sit outside the formula, and they do not change the status.</p>
+<p class="small">Every rate and percent change comes out as a fraction. 0.05 is 5 percent, or 5 percentage points when it is the gap between two rates. Count each case once. If the bottom of a fraction is zero, report N/A.</p>
 
 <h2>How to read the Epic site</h2>
 <p>The <a href="https://open.epic.com/EHITables/GetTable/_index.htm" target="_blank" rel="noopener noreferrer">Epic EHI table index</a> lists the export schema. Each table page describes its primary key and columns. Run calculations on your organization's exported files after checking its Epic version and local configuration.</p>
@@ -186,12 +177,16 @@ td code { font-size: 12.5px; }
 </ul>
 <p class="small">Everything else comes from the normal note, visit, patient and billing tables.</p>
 
+<h2>Words every card uses</h2>
+<dl class="words gloss"><dt>Scribe visit</dt><dd>A visit with at least one row in <code>PAT_ENC_AMBIENT_SESSIONS</code>.</dd><dt>Scribe note</dt><dd>A note of the type the scribe drafts, usually the progress note, on a scribe visit.</dd><dt>Before weeks, After weeks</dt><dd>Two fixed periods, one before and one after a clinician started using the scribe. Confirm each start date against the rollout record.</dd><dt>Clinician</dt><dd>Epic exports provider names without their IDs, and two providers can share a name. Group results by a clinician identifier you have verified.</dd><dt>Comparison group</dt><dd>For any before-and-after metric, also compare against clinicians in the same specialty who did not get the scribe. Visit counts and timing also move with templates, vacations and panel changes.</dd></dl>
 
 <h2>Summary</h2>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap">
+<table>
   <thead><tr><th scope="col">Metric</th><th scope="col">From the export?</th><th scope="col">Main tables</th></tr></thead>
   <tbody id="summary"></tbody>
-</table></div>
+</table>
+</div>
 
 <h2>Metric by metric</h2>
 <div id="detail"></div>
@@ -202,363 +197,1160 @@ td code { font-size: 12.5px; }
 
 </div>
 <script>
-const S = {yes: "Yes", partly: "Partly", no: "No"};
+// Card data. Source lines use a small notation: {TABLE.COLUMN} is in the export, [what you need|where to get it] is not, and `Name` is a variable.
+const CFG = {
+ "link": "epic",
+ "pages": {},
+ "names": [
+  "DATETIME",
+  "PATIENT",
+  "m"
+ ],
+ "inLabel": "In Epic",
+ "rowWord": "row",
+ "rowsLabel": "Tables and rows"
+};
 const DATA = [
-  {
-    "grp": "Usefulness, usability, efficacy",
-    "items": [
-      {
-        "id": "doc-time",
-        "name": "Documentation Efficiency Improvement",
-        "s": "partly",
-        "main": "NOTE_EDIT_TRAIL, HNO_INFO",
-        "what": "Drop in documentation time per visit after scribe adoption.",
-        "f": "#Note-time estimate\nsum over editing bursts ( last {NOTE_EDIT_TRAIL.ACT_TAKEN_INST_DTTM} − first {NOTE_EDIT_TRAIL.ACT_TAKEN_INST_DTTM} )\n#Per visit\nsum note-time estimates for one {HNO_INFO.PAT_ENC_CSN_ID}\n#Reduction\n( mean per visit Before − mean per visit After ) ÷ mean per visit Before\n#Missing for measured documentation time\n[documentation minutes per visit|Epic Signal or another activity report]",
-        "rows": [
-          "NOTE_EDIT_TRAIL: one row per action on a note, with a UTC instant. It records action times without an editor column.",
-          "HNO_INFO: one row per note. Its PAT_ENC_CSN_ID column links it to the visit.",
-          "Join on NOTE_ID, then on PAT_ENC_CSN_ID."
-        ],
-        "w": "Average estimated note time per visit before minus after, divided by before.",
-        "gaps": [
-          "Note-action spans include idle time and do not identify who was editing. Label the result an estimate.",
-          "Measured documentation time needs an activity report such as Epic Signal. NASA-TLX is the separate survey metric below."
-        ]
-      },
-      {
-        "id": "tlx",
-        "name": "NASA-TLX Change",
-        "s": "no",
-        "main": "PAT_ENC, PAT_ENC_AMBIENT_SESSIONS",
-        "what": "Percent change in a workload survey score.",
-        "f": "100 × ( [NASA-TLX before|survey] − [NASA-TLX after|survey] ) ÷ [NASA-TLX before|survey]\n#Epic only tells you who to survey\ndistinct {PAT_ENC.VISIT_PROV_ID_PROV_NAME} for visits that have a row in {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID}",
-        "rows": [
-          "PAT_ENC_AMBIENT_SESSIONS: one row per recording session.",
-          "PAT_ENC: one row per visit. Join on PAT_ENC_CSN_ID to get the clinician."
-        ],
-        "w": "Survey score before minus survey score after, divided by the score before, then multiply by 100.",
-        "gaps": [
-          "Survey the same clinicians before and after use, with the same questionnaire and scoring. Epic provides the clinician list, not the scores."
-        ]
-      },
-      {
-        "id": "pfi",
-        "name": "Burnout Reduction (Stanford PFI)",
-        "s": "no",
-        "main": "PAT_ENC_AMBIENT_SESSIONS",
-        "what": "Change in the exhaustion and disengagement part of a burnout survey.",
-        "f": "[PFI score after|survey] − [PFI score before|survey]   (points on a 5-point scale)\n#Epic only tells you who adopted and for how long\nweeks of use = distinct week( {PAT_ENC_AMBIENT_SESSIONS.CONTACT_DATE} ) per clinician",
-        "rows": [
-          "Same two tables as NASA-TLX Change."
-        ],
-        "w": "Survey score after minus survey score before, in points on a 5-point scale.",
-        "gaps": [
-          "Collect paired PFI burnout scores through a survey. A negative after-minus-before result means improvement."
-        ]
-      },
-      {
-        "id": "same-day",
-        "name": "Same-Day Note Closure Rate",
-        "s": "yes",
-        "main": "NOTE_ENC_INFO, PAT_ENC",
-        "what": "Share of visits where the note is signed on the day of the visit.",
-        "f": "#Same-day visit\ndate( {NOTE_ENC_INFO.NOT_FILETM_LOC_DTTM} of the first Signed version ) = {PAT_ENC.CONTACT_DATE}, where {NOTE_ENC_INFO.NOTE_STATUS_C_NAME} = Signed\n#Rate, completed visits only\ncount distinct {PAT_ENC.PAT_ENC_CSN_ID} meeting that rule ÷ count distinct {PAT_ENC.PAT_ENC_CSN_ID} where {PAT_ENC.APPT_STATUS_C_NAME} = Completed\n#Change (percentage points)\n100 × ( rate After − rate Before )",
-        "rows": [
-          "NOTE_ENC_INFO: one row per note version. Use the first row with status Signed. An addendum is a separate note, not another row.",
-          "PAT_ENC: one row per visit, with the visit date as a plain local date. A visit with several notes counts once; use its progress note.",
-          "Join on NOTE_ID, then on PAT_ENC_CSN_ID."
-        ],
-        "w": "Same-day visits divided by completed visits after, minus the same rate before; multiply by 100 for percentage points.",
-        "gaps": [
-          "Use the first qualifying signed version and local dates. Count each completed visit once, even if it has several notes."
-        ]
-      }
-    ]
-  },
-  {
-    "grp": "Fairness and bias",
-    "items": [
-      {
-        "id": "dter",
-        "name": "Demographic Transcription Equity Rate",
-        "s": "partly",
-        "main": "PATIENT_RACE, PATIENT, PAT_SPOKEN_LANG, PAT_ENC_AMBIENT_SESSIONS",
-        "what": "Whether speech recognition is as accurate for every patient group, as the worst group's accuracy divided by the best group's.",
-        "f": "#Accuracy ratio\nmin group ( 1 − WER ) ÷ max group ( 1 − WER )\n#WER for each group\n( [substitutions|vendor] + [deletions|vendor] + [insertions|vendor] ) ÷ [reference words|vendor]\n#Patient groups and session link\n{PATIENT_RACE.PATIENT_RACE_C_NAME}   {PATIENT.ETHNIC_GROUP_C_NAME}   {PATIENT.SEX_C_NAME}   {PATIENT.BIRTH_DATE}   {PAT_SPOKEN_LANG.PAT_SPOKEN_LANG_C_NAME}\n{PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT}",
-        "rows": [
-          "PATIENT: one row per patient.",
-          "PATIENT_RACE: one row per race per patient. A patient can have several rows, so pick a rule.",
-          "PAT_SPOKEN_LANG: one row per language per patient.",
-          "PAT_ENC_AMBIENT_SESSIONS: one row per recording session. AMBIENT_SESSION_IDENT is the session ID the vendor uses."
-        ],
-        "w": "Lowest group accuracy divided by highest group accuracy, where accuracy is one minus the word error rate.",
-        "gaps": [
-          "Get reference-transcript error counts from the vendor and pool them within each group. Link speech to the actual speaker; patient demographics alone cannot identify the clinician's voice.",
-          "If WER exceeds 1, the accuracy-ratio interpretation fails. A zero best-group accuracy gives N/A."
-        ]
-      },
-      {
-        "id": "dwep",
-        "name": "ASR Word Error Parity",
-        "s": "partly",
-        "main": "PATIENT_RACE, PATIENT, PAT_SPOKEN_LANG, PAT_ENC_AMBIENT_SESSIONS",
-        "what": "Largest gap in word error rate between any two groups.",
-        "f": "#WER for each group\n( [substitutions|vendor] + [deletions|vendor] + [insertions|vendor] ) ÷ [reference words|vendor]\n#Largest gap (percentage points)\n100 × ( highest group WER − lowest group WER )\n#Patient groups and session link\n{PATIENT_RACE.PATIENT_RACE_C_NAME}   {PATIENT.ETHNIC_GROUP_C_NAME}   {PATIENT.SEX_C_NAME}   {PATIENT.BIRTH_DATE}   {PAT_SPOKEN_LANG.PAT_SPOKEN_LANG_C_NAME}\n{PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT}",
-        "rows": [
-          "Same tables as Demographic Transcription Equity Rate."
-        ],
-        "w": "Largest difference in word error rate between any two patient groups, in percentage points.",
-        "gaps": [
-          "The vendor supplies substitutions, deletions, insertions and reference-word counts. Pool counts by speaker group and show the group sample sizes."
-        ]
-      },
-      {
-        "id": "cdaeg",
-        "name": "Gender and Accent Error Gap",
-        "s": "partly",
-        "main": "PATIENT, PATIENT_4",
-        "what": "Word error rate gap by gender and by accent.",
-        "f": "#Largest gap, separately for gender and accent\nmax | [WER of one speaker group|vendor] − [WER of another speaker group|vendor] |\n#Patient gender fields\n{PATIENT.SEX_C_NAME}   {PATIENT_4.GENDER_IDENTITY_C_NAME}   {PATIENT_4.SEX_ASGN_AT_BIRTH_C_NAME}\n#Missing for accent and clinician speech\n[accent and speaker identity|vendor log and voluntary speaker information]",
-        "rows": [
-          "PATIENT and PATIENT_4: one row per patient in each table."
-        ],
-        "w": "Largest word error rate difference between gender groups, and separately between accent groups.",
-        "gaps": [
-          "WER and speaker identity come from the vendor. Collect accent information separately; spoken language does not establish accent."
-        ]
-      },
-      {
-        "id": "mtr",
-        "name": "Medical Term Recall Rate",
-        "s": "partly",
-        "main": "HNO_PLAIN_TEXT",
-        "what": "Share of medical terms said in the visit that make it into the note.",
-        "f": "#Recall\n[reference medical terms correctly captured|reviewer] in {HNO_PLAIN_TEXT.NOTE_TEXT} ÷ [medical terms in reference transcript|reviewer and vendor transcript]",
-        "rows": [
-          "HNO_PLAIN_TEXT: one row per chunk of note text. Only notes stored as plain text are in it."
-        ],
-        "w": "Reference medical terms correctly captured in the note, divided by reference medical terms.",
-        "gaps": [
-          "Get reference transcripts from the vendor and have a reviewer mark which medical terms were correctly captured. Keep the generated draft and signed note results separate."
-        ]
-      }
-    ]
-  },
-  {
-    "grp": "Safety and reliability",
-    "items": [
-      {
-        "id": "cnser",
-        "name": "Clinical Note Safety Error Rate",
-        "s": "partly",
-        "main": "HNO_INFO, PAT_ENC_AMBIENT_SESSIONS",
-        "what": "Share of scribe notes with an error that could cause moderate or severe harm.",
-        "f": "#Safety error rate\n[notes with at least one harm-potential error|clinician review] ÷ count distinct {HNO_INFO.NOTE_ID} in the reviewed sample\n#Sample scribe progress notes\n{HNO_INFO.PAT_ENC_CSN_ID} in {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID}, with the qualifying {HNO_INFO.IP_NOTE_TYPE_C_NAME}",
-        "rows": [
-          "HNO_INFO: one row per note. An addendum is its own note, and its SIGNED_NOTE_ID column points at the note it adds to. A cosign note points the same way, so filter on the note type."
-        ],
-        "w": "Sampled scribe notes with a harm-potential error, divided by sampled scribe notes.",
-        "gaps": [
-          "A clinician must identify the errors against reference audio or transcripts. Review the generated draft and signed note separately."
-        ]
-      },
-      {
-        "id": "csep",
-        "name": "Clinically Significant Error Proportion",
-        "s": "partly",
-        "main": "HNO_INFO, PAT_ENC_AMBIENT_SESSIONS",
-        "what": "Share of scribe notes with at least one clinically significant error.",
-        "f": "#Clinically significant error rate\n[notes with at least one clinically significant error|clinician review] ÷ count distinct {HNO_INFO.NOTE_ID} in the reviewed sample\n#Sample scribe notes through the visit\n{HNO_INFO.PAT_ENC_CSN_ID} in {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID}",
-        "rows": [
-          "Same tables as Clinical Note Safety Error Rate."
-        ],
-        "w": "Sampled scribe notes with a clinically significant error, divided by sampled scribe notes.",
-        "gaps": [
-          "Use a clinician review with a defined clinical-significance rubric. Edits and addenda alone do not identify errors."
-        ]
-      },
-      {
-        "id": "uasrs",
-        "name": "Usability-Adjusted Safety Reliability Score",
-        "s": "partly",
-        "main": "NOTE_EDIT_TRAIL",
-        "what": "A mix of usability (60%) and reduced after-hours documentation work (40%).",
-        "f": "#Combined score\n0.6 × [SUS score, 0 to 100|survey] + 0.4 × [after-hours reduction scaled to 0 to 100|documented local rule]\n#Export estimate: after-hours action share\ncount {NOTE_EDIT_TRAIL.IP_ACTION_DTTM} outside declared work hours ÷ all note actions in the same period",
-        "rows": [
-          "NOTE_EDIT_TRAIL: one row per action on a note, with a local timestamp."
-        ],
-        "w": "0.6 times the usability score, plus 0.4 times the drop in after-hours note work scaled to 0 to 100.",
-        "gaps": [
-          "SUS comes from a survey. The workbook does not define how to scale the after-hours reduction; document that rule before combining the parts.",
-          "Note-action counts are a process measure, not active minutes. Use an activity report to measure after-hours time."
-        ]
-      },
-      {
-        "id": "consent",
-        "name": "Consent and Review Compliance",
-        "s": "partly",
-        "main": "PAT_ENC, PAT_ENC_AMBIENT_SESSIONS",
-        "what": "Whether patients consented to recording and clinicians reviewed the note.",
-        "f": "#Consent rate\ncount distinct {PAT_ENC.PAT_ENC_CSN_ID} among scribe visits with {PAT_ENC.CONSENT_TYPE_C_NAME} = your recording-consent value ÷ count distinct {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID}\n#If consent is recorded by the vendor\n[consent flag|vendor log] matched on {PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT}\n#Review\nsee Clinician Review and Sign-Off Rate",
-        "rows": [
-          "PAT_ENC: one row per visit. CONSENT_TYPE_C_NAME is a pick-list your site defines.",
-          "PAT_ENC_AMBIENT_SESSIONS: one row per recording session."
-        ],
-        "w": "Scribe visits with a recorded recording consent, divided by scribe visits. Review is the sign-off metric below.",
-        "gaps": [
-          "Confirm where your site records consent and that it was obtained before recording. Vendor-app consent needs the vendor's session log.",
-          "Review the written procedure and clinician-review evidence separately from signature status."
-        ]
-      },
-      {
-        "id": "retention",
-        "name": "Audio and Transcript Retention",
-        "s": "no",
-        "main": "PAT_ENC_AMBIENT_SESSIONS",
-        "what": "Whether the vendor deletes audio and transcripts quickly and lets clinicians control it.",
-        "f": "[audio retention period|vendor settings]   [transcript retention period|vendor settings]   [clinician can delete a session|vendor settings]\n#Epic only proves a session existed\n{PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT}",
-        "rows": [
-          "None."
-        ],
-        "w": "Three settings read from the vendor: audio retention period, transcript retention period, and whether a clinician can delete a session.",
-        "gaps": [
-          "Read the vendor contract and settings. Check a few older sessions against the stated deletion period; Epic does not record vendor deletion."
-        ]
-      }
-    ]
-  },
-  {
-    "grp": "Accountability and privacy",
-    "items": [
-      {
-        "id": "signoff",
-        "name": "Clinician Review and Sign-Off Rate",
-        "s": "partly",
-        "main": "NOTE_ENC_INFO, HNO_INFO",
-        "what": "Whether scribe notes must be reviewed and signed by a clinician before they are final, and whether they are.",
-        "f": "#Requirement\n[review and signature required before finalization|Epic build review]\n#Signed-status rate\ncount distinct {NOTE_ENC_INFO.NOTE_ID} whose latest {NOTE_ENC_INFO.NOTE_STATUS_C_NAME} is Signed, Cosigned or Finalized ÷ count distinct {HNO_INFO.NOTE_ID} in the same scribe-note set\n#Signer qualification needs local verification\n{NOTE_ENC_INFO.AUTHOR_PRVD_TYPE_C_NAME} describes the author",
-        "rows": [
-          "HNO_INFO: one row per note. UNSIGNED_YN is a quick filter for unsigned notes.",
-          "NOTE_ENC_INFO: one row per note version, with status, author and file time.",
-          "Join on NOTE_ID."
-        ],
-        "w": "Two answers: is a signature required (a build setting), and signed scribe notes divided by all scribe notes.",
-        "gaps": [
-          "Your Epic analyst checks the signature requirement in the note-type build. Validate which signed statuses and signers qualify.",
-          "A signature or short signing interval does not establish how thoroughly the note was reviewed."
-        ]
-      },
-      {
-        "id": "training",
-        "name": "Training Data Use Disclosure",
-        "s": "no",
-        "main": "none",
-        "what": "Whether the vendor says if it trains on your data and lets you opt out.",
-        "f": "[vendor trains on session data, yes or no|vendor policy]   [opt-in or opt-out|contract]   [clinician can restrict secondary use|vendor settings]",
-        "rows": [
-          "None."
-        ],
-        "w": "Three answers read from documents: does the vendor train on session data, is it opt-in or opt-out, and can a clinician restrict secondary use.",
-        "gaps": [
-          "Read the vendor policy, contract and settings. Keep the document version and date with each answer."
-        ]
-      }
-    ]
-  },
-  {
-    "grp": "Financial",
-    "items": [
-      {
-        "id": "icer",
-        "name": "Cost per QALY (ICER)",
-        "s": "no",
-        "main": "ARPB_TRANSACTIONS",
-        "what": "Extra cost per quality-adjusted life year gained.",
-        "f": "#Metric\n( [cost with the scribe|finance] − [cost of usual care|finance] ) ÷ ( [QALYs with the scribe|health economic model] − [QALYs of usual care|model] )\n#Epic only gives you charges, which are an input to the cost side\n{ARPB_TRANSACTIONS.AMOUNT} where {ARPB_TRANSACTIONS.TX_TYPE_C_NAME} = Charge",
-        "rows": [
-          "ARPB_TRANSACTIONS: one row per professional charge, payment or adjustment."
-        ],
-        "w": "Cost with the scribe minus cost of usual care, divided by QALYs with the scribe minus QALYs of usual care.",
-        "gaps": [
-          "Finance supplies costs and a health-economic model supplies QALYs. Charges alone do not supply either quantity."
-        ]
-      },
-      {
-        "id": "rvu-pct",
-        "name": "Weekly RVU Uplift (%)",
-        "s": "partly",
-        "main": "ARPB_TRANSACTIONS, INV_CLM_LN_ADDL, INV_BASIC_INFO, INV_TX_PIECES",
-        "what": "Percent change in billed work RVUs per clinician per week.",
-        "f": "#Work RVUs per charge\n[work RVU for the billed code and modifier|CMS file] × {ARPB_TRANSACTIONS.PROCEDURE_QUANTITY}\n#Billed code and charge link\n{INV_CLM_LN_ADDL.PROC_OR_REV_CODE} on the first primary {INV_BASIC_INFO.FILING_ORDER_C_NAME}, linked by {INV_TX_PIECES.TX_ID}\n#Group the charges\n{ARPB_TRANSACTIONS.MODIFIER_ONE}, {ARPB_TRANSACTIONS.SERV_PROVIDER_ID_PROV_NAME}, week of {ARPB_TRANSACTIONS.SERVICE_DATE}\n#Weekly change\n100 × ( mean weekly RVUs After − mean weekly RVUs Before ) ÷ mean weekly RVUs Before",
-        "rows": [
-          "ARPB_TRANSACTIONS: one row per professional charge, payment or adjustment. Keep rows with TX_TYPE_C_NAME = Charge and an empty VOID_DATE. Count each charge once.",
-          "INV_TX_PIECES: one row per charge on an invoice line. Its TX_ID column links the charge to the invoice.",
-          "INV_CLM_LN_ADDL: one row per claim line per claim sent. A rebilled or secondary claim repeats the line, so keep only the first primary one.",
-          "INV_BASIC_INFO: one row per claim sent, with the filing order."
-        ],
-        "w": "Weekly work RVUs per clinician after, minus before, divided by before, then multiply by 100.",
-        "gaps": [
-          "Look up the work-RVU weight for the billed code, modifier and year. Count each nonvoid charge once, using its first primary claim line.",
-          "This page uses work RVUs; the workbook does not specify an RVU component."
-        ]
-      },
-      {
-        "id": "enc-vol",
-        "name": "Weekly Encounter Volume Uplift (%)",
-        "s": "yes",
-        "main": "PAT_ENC",
-        "what": "Percent change in completed visits per clinician per week.",
-        "f": "#Visits per clinician-week\ncount distinct {PAT_ENC.PAT_ENC_CSN_ID} where {PAT_ENC.APPT_STATUS_C_NAME} = Completed, grouped by {PAT_ENC.VISIT_PROV_ID_PROV_NAME} and week of {PAT_ENC.CONTACT_DATE}\n#Weekly change\n100 × ( mean weekly visits After − mean weekly visits Before ) ÷ mean weekly visits Before",
-        "rows": [
-          "PAT_ENC: one row per visit.",
-          "PAT_ENC_APPT: one row per provider per appointment. A joint visit has two rows, so count visits from PAT_ENC and use this table for specialty."
-        ],
-        "w": "Completed visits per clinician per week after, minus before, divided by before, then multiply by 100.",
-        "gaps": [
-          "Count visits from PAT_ENC, not appointment-provider rows, which can repeat a joint visit. Use the same clinicians and eligible weeks before and after."
-        ]
-      },
-      {
-        "id": "rvu-abs",
-        "name": "RVU Change per Physician-Week",
-        "s": "partly",
-        "main": "ARPB_TRANSACTIONS, INV_CLM_LN_ADDL",
-        "what": "Change in weekly work RVUs per clinician, as a number instead of a percent.",
-        "f": "#Work RVUs per charge\n[work RVU for the billed code and modifier|CMS file] × {ARPB_TRANSACTIONS.PROCEDURE_QUANTITY}, using {INV_CLM_LN_ADDL.PROC_OR_REV_CODE}\n#Use the charge and week rules from Weekly RVU Uplift\nmean weekly work RVUs After − mean weekly work RVUs Before",
-        "rows": [
-          "Same tables as Weekly RVU Uplift."
-        ],
-        "w": "Weekly work RVUs per clinician after, minus before.",
-        "gaps": [
-          "Use the same charges, modifiers and work-RVU weights as Weekly RVU Uplift. Report the difference rather than a relative percentage."
-        ]
-      },
-      {
-        "id": "ehr-min",
-        "name": "Documentation Time Reduction (min/day)",
-        "s": "partly",
-        "main": "NOTE_EDIT_TRAIL",
-        "what": "Minutes per day less spent in the EHR.",
-        "f": "#Note-time estimate per local day\nsum over editing bursts ( last {NOTE_EDIT_TRAIL.IP_ACTION_DTTM} − first {NOTE_EDIT_TRAIL.IP_ACTION_DTTM} ), converted to minutes\n#Estimated minutes saved per day\nmedian Before − median After\n#Missing for the full metric\n[total EHR minutes per day|Epic Signal or another activity report]",
-        "rows": [
-          "NOTE_EDIT_TRAIL: one row per action on a note, with a local instant. It records action times without an editor column."
-        ],
-        "w": "Median note minutes per clinician per day before, minus the median after.",
-        "gaps": [
-          "The export estimates note-action spans. Total EHR minutes, including orders, messages and chart review, require an activity report such as Epic Signal."
-        ]
-      }
-    ]
-  }
+ {
+  "grp": "Usefulness, usability, efficacy",
+  "items": [
+   {
+    "id": "doc-time",
+    "name": "Documentation Efficiency Improvement",
+    "row": 3,
+    "s": "partly",
+    "main": "NOTE_EDIT_TRAIL, HNO_INFO",
+    "eq": [
+     "Reduction = ( `Time before` − `Time after` ) ÷ `Time before`"
+    ],
+    "vars": [
+     {
+      "n": "Time before",
+      "d": "The average `Documentation time` for one visit, in the Before weeks."
+     },
+     {
+      "n": "Time after",
+      "d": "The average `Documentation time` for one visit, in the After weeks."
+     },
+     {
+      "n": "Documentation time",
+      "d": "The minutes a clinician spends writing the notes for one visit.",
+      "x": "[measured documentation minutes per visit|Epic Signal or another activity report]",
+      "alt": "last {NOTE_EDIT_TRAIL.ACT_TAKEN_INST_DTTM} − first {NOTE_EDIT_TRAIL.ACT_TAKEN_INST_DTTM}",
+      "altw": "the last and first action in each burst of editing, added up over every note with the same {HNO_INFO.PAT_ENC_CSN_ID}"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "NOTE_EDIT_TRAIL: one row per action on a note. ACT_TAKEN_INST_DTTM is its time in UTC, and no column says who acted.",
+     "HNO_INFO: one row per note. PAT_ENC_CSN_ID says which visit the note belongs to.",
+     "Join on NOTE_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Documentation time",
+      "t": "The export does not measure how long a clinician worked. Ask your Epic analyst for an activity report such as Epic Signal, or ask the vendor for its time-saved report. Label the stand-in an estimate."
+     }
+    ],
+    "checks": [
+     "A burst is a run of actions on one note with no pause longer than a cutoff you choose. Write the cutoff down. Idle time inside a burst still counts.",
+     "The description also mentions perceived workload. That part is the NASA-TLX metric."
+    ],
+    "sheet": "Documentation Efficiency Improvement",
+    "desc": "Quantifies the change in clinician documentation time per appointment after implementation of an ambient AI documentation system, capturing both objective efficiency gains and perceived workload reduction. Use pre- and post-implementation electronic health record (EHR) time metrics to measure impact on clinician efficiency.",
+    "use": "To measure real-world impact of ambient AI on clinician workflow efficiency and cognitive load, enabling operational evaluation of usefulness and efficacy in clinical environments.",
+    "bench": "≥15% reduction in documentation time per appointment relative to pre-implementation baseline across representative clinician sample; compute as ((baseline time − post-implementation time)/baseline time)."
+   },
+   {
+    "id": "tlx",
+    "name": "NASA-TLX Change",
+    "row": 4,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Reduction = ( `Score before` − `Score after` ) ÷ `Score before`"
+    ],
+    "vars": [
+     {
+      "n": "Score before",
+      "d": "The average NASA-TLX score clinicians give their documentation work before the scribe. NASA-TLX is a short survey that asks how hard a task felt.",
+      "x": "[NASA-TLX score before the scribe|survey]"
+     },
+     {
+      "n": "Score after",
+      "d": "The average score from the same survey and the same clinicians, after they have used the scribe.",
+      "x": "[NASA-TLX score after the scribe|survey]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Who to survey",
+      "x": "distinct {PAT_ENC.VISIT_PROV_ID_PROV_NAME} on visits with a row in {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID}"
+     }
+    ],
+    "rows": [
+     "PAT_ENC: one row per visit.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit.",
+     "Join on PAT_ENC_CSN_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Score before, Score after",
+      "t": "Epic does not hold survey answers. In a survey tool or the vendor's in-app survey, give the same clinicians the NASA-TLX before they start using the scribe and again 8 to 12 weeks after. Score it the same way both times."
+     }
+    ],
+    "checks": [],
+    "sheet": "Reduction in Cognitive Task Load (NASA-TLX Change)",
+    "desc": "Measures the pre- to post-implementation change in clinician cognitive workload, using the NASA Task Load Index (NASA-TLX) for documentation tasks supported by ambient AI. A larger decrease indicates greater reduction in mental demand, effort, and temporal pressure attributable to the AI tool.",
+    "use": "To quantify usefulness and efficacy of ambient AI in real clinical workflows by assessing whether the tool materially lowers documentation burden and cognitive workload.",
+    "bench": "≥20% reduction in NASA-TLX total score for documentation tasks relative to baseline over a representative clinician sample; compute as (baseline TLX − post TLX) / baseline TLX."
+   },
+   {
+    "id": "pfi",
+    "name": "Burnout Reduction (Stanford PFI)",
+    "row": 5,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "Change = `Score after` − `Score before`"
+    ],
+    "vars": [
+     {
+      "n": "Score before",
+      "d": "The average burnout score before the scribe, from the work exhaustion and interpersonal disengagement questions of the Stanford Professional Fulfillment Index (PFI), on a 5-point scale.",
+      "x": "[PFI burnout score before the scribe|survey]"
+     },
+     {
+      "n": "Score after",
+      "d": "The same clinicians' average score after using the scribe. Lower is better, so a negative change means less burnout.",
+      "x": "[PFI burnout score after the scribe|survey]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Who to survey",
+      "x": "distinct {PAT_ENC.VISIT_PROV_ID_PROV_NAME} on visits with a row in {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID}"
+     },
+     {
+      "n": "Weeks each clinician used the scribe",
+      "x": "count distinct weeks of {PAT_ENC_AMBIENT_SESSIONS.CONTACT_DATE} for each {PAT_ENC.VISIT_PROV_ID_PROV_NAME}"
+     }
+    ],
+    "rows": [
+     "PAT_ENC: one row per visit.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit.",
+     "Join on PAT_ENC_CSN_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Score before, Score after",
+      "t": "Epic does not hold survey answers. Ask the same clinicians the PFI work exhaustion and interpersonal disengagement questions before they start using the scribe and again 24 weeks after, the follow-up used in the trial the spreadsheet cites."
+     }
+    ],
+    "checks": [],
+    "sheet": "Practitioner Burnout Reduction (Stanford Professional Fulfillment Index – Work Exhaustion / Interpersonal Disengagement Subscale)",
+    "desc": "Measures change in clinician burnout attributable to the AI system using the validated Stanford Professional Fulfillment Index (PFI). The work exhaustion/interpersonal disengagement subscale captures emotional exhaustion and depersonalization on a 5-point Likert scale, with lower scores indicating improvement. This metric reflects whether the AI meaningfully reduces real-world cognitive and administrative burden rather than merely improving perceived usability.",
+    "use": "Evaluate whether ambient AI systems deliver measurable downstream benefit to clinicians, which is a prerequisite for sustained adoption and safe long-term deployment. Used to compare AI-assisted workflows against usual care and to monitor whether benefits persist over time.",
+    "bench": "Mean reduction in work exhaustion/interpersonal disengagement: −0.44 points on a 5-point scale, Number Needed to Treat *NNT): 1.68 clinicians to achieve a clinically meanigful burnout reduction, Sustained effet over 24 weeks with no detected performance drift"
+   },
+   {
+    "id": "same-day",
+    "name": "Same-Day Note Closure Rate",
+    "row": 6,
+    "s": "yes",
+    "main": "NOTE_ENC_INFO, PAT_ENC, HNO_INFO",
+    "eq": [
+     "Increase = `Rate after` − `Rate before`",
+     "Rate = `Same-day visits` ÷ `Completed visits`"
+    ],
+    "vars": [
+     {
+      "n": "Rate before",
+      "d": "The `Rate` for visits in the Before weeks."
+     },
+     {
+      "n": "Rate after",
+      "d": "The `Rate` for visits in the After weeks."
+     },
+     {
+      "n": "Same-day visits",
+      "d": "Completed visits whose note was signed on the same calendar day as the visit.",
+      "x": "count distinct {PAT_ENC.PAT_ENC_CSN_ID}",
+      "w": "`Completed visits` whose note, found through {HNO_INFO.PAT_ENC_CSN_ID}, has a first version with {NOTE_ENC_INFO.NOTE_STATUS_C_NAME} = Signed, filed on a {NOTE_ENC_INFO.NOT_FILETM_LOC_DTTM} date equal to {PAT_ENC.CONTACT_DATE}"
+     },
+     {
+      "n": "Completed visits",
+      "d": "Visits that took place. Cancelled visits and no-shows do not count.",
+      "x": "count distinct {PAT_ENC.PAT_ENC_CSN_ID}",
+      "w": "rows where {PAT_ENC.APPT_STATUS_C_NAME} = Completed"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "NOTE_ENC_INFO: one row per version of a note. An addendum (a note added later to a signed note) is a separate note, not a later version.",
+     "HNO_INFO: one row per note. PAT_ENC_CSN_ID says which visit the note belongs to.",
+     "PAT_ENC: one row per visit. CONTACT_DATE is the visit date, as a local date.",
+     "Join NOTE_ENC_INFO to HNO_INFO on NOTE_ID, and HNO_INFO to PAT_ENC on PAT_ENC_CSN_ID."
+    ],
+    "gaps": [],
+    "checks": [
+     "A visit with several notes counts once. Use its progress note.",
+     "Use local dates on both sides."
+    ],
+    "sheet": "Same-Day Note Closure Rate Increase",
+    "desc": "Measures the change in the percentage of clinical encounters where documentation is completed on the same day of service after the introduction of an ambient AI scribe, compared with baseline. Same-day completion reflects improved workflow efficiency and usefulness of the tool in real clinical practice.",
+    "use": "To quantify whether ambient AI improves clinical workflow throughput and reduces delay in documentation tasks that can impact clinician workload and patient care continuity.",
+    "bench": "Increase ≥ 5 percentage points in same-day note closure relative to baseline over a representative clinician population; computed as post-AI minus pre-AI same-day documentation rates."
+   }
+  ]
+ },
+ {
+  "grp": "Fairness and bias",
+  "items": [
+   {
+    "id": "dter",
+    "name": "Demographic Transcription Equity Rate",
+    "row": 8,
+    "s": "partly",
+    "main": "PATIENT_RACE, PATIENT, PAT_SPOKEN_LANG, PAT_ENC_AMBIENT_SESSIONS",
+    "eq": [
+     "DTER = `Lowest accuracy` ÷ `Highest accuracy`",
+     "Accuracy = 1 − `WER`",
+     "WER = ( `Substitutions` + `Deletions` + `Insertions` ) ÷ `Reference words`"
+    ],
+    "vars": [
+     {
+      "n": "Lowest accuracy",
+      "d": "The `Accuracy` for the `Group` the scribe hears worst."
+     },
+     {
+      "n": "Highest accuracy",
+      "d": "The `Accuracy` for the `Group` the scribe hears best."
+     },
+     {
+      "n": "WER",
+      "d": "Word error rate: the scribe's word mistakes divided by the words really said, counted over all of one group's recordings."
+     },
+     {
+      "n": "Group",
+      "d": "Patients who share one value of one trait, such as race, ethnicity, sex, age band or language. Compare groups within one trait at a time.",
+      "x": "{PATIENT_RACE.PATIENT_RACE_C_NAME}, {PATIENT.ETHNIC_GROUP_C_NAME}, {PATIENT.SEX_C_NAME}, age band from {PATIENT.BIRTH_DATE} or {PAT_SPOKEN_LANG.PAT_SPOKEN_LANG_C_NAME}",
+      "w": "patients who share one value, matched to recordings by {PAT_ENC.PAT_ID} and {PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT}"
+     },
+     {
+      "n": "Substitutions",
+      "d": "Words the scribe wrote down as a different word.",
+      "x": "[substitutions per session|vendor, from audio]"
+     },
+     {
+      "n": "Deletions",
+      "d": "Words that were said and the scribe left out.",
+      "x": "[deletions per session|vendor, from audio]"
+     },
+     {
+      "n": "Insertions",
+      "d": "Words the scribe wrote that nobody said.",
+      "x": "[insertions per session|vendor, from audio]"
+     },
+     {
+      "n": "Reference words",
+      "d": "All the words in the correct transcript, the one a person checked against the audio.",
+      "x": "[words in the checked transcript, per session|vendor, from audio]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "PATIENT: one row per patient.",
+     "PATIENT_RACE: one row per race per patient. Pick a rule for patients with more than one race and use it throughout.",
+     "PAT_SPOKEN_LANG: one row per language per patient.",
+     "PAT_ENC: one row per visit.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit. A session can take more than one line, so count each AMBIENT_SESSION_IDENT once.",
+     "Join the patient tables on PAT_ID. Look up each session's PAT_ENC_CSN_ID in PAT_ENC to get the patient's PAT_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Substitutions, Deletions, Insertions, Reference words",
+      "t": "Audio and transcripts stay with the vendor. Ask the vendor for the four counts for each session, with its session ID, so you can regroup sessions yourself. Add the counts up within each group."
+     }
+    ],
+    "checks": [
+     "Groups come from the patient, but the clinician's voice and room noise can also cause a gap. Score only the patient's speech, or ask the vendor for speaker labels.",
+     "If WER is above 1, accuracy drops below zero and the ratio means nothing. A best group accuracy of zero gives N/A.",
+     "Confirm the vendor uses the same session ID as AMBIENT_SESSION_IDENT before matching its counts."
+    ],
+    "sheet": "Demographic Transcription Equity Rate (DTER)",
+    "desc": "Measures parity in automatic speech recognition (ASR) accuracy across protected demographic groups (e.g., race/ethnicity, age, gender). Compute the word error rates (WER) or similar transcription accuracy metric for each group and report the minimum accuracy ratio relative to the best-performing group.",
+    "use": "To evaluate whether an ambient AI documentation system transcribes speech with similar accuracy across diverse demographic subgroups, reducing bias in clinical records and downstream care impacts.",
+    "bench": "DTER ≥ 0.90 across defined demographic pairs (e.g., Black vs White speakers, gender groups), where:"
+   },
+   {
+    "id": "dwep",
+    "name": "ASR Word Error Parity",
+    "row": 9,
+    "s": "partly",
+    "main": "PATIENT_RACE, PATIENT, PAT_SPOKEN_LANG, PAT_ENC_AMBIENT_SESSIONS",
+    "eq": [
+     "Largest gap = `Highest WER` − `Lowest WER`",
+     "WER = ( `Substitutions` + `Deletions` + `Insertions` ) ÷ `Reference words`"
+    ],
+    "vars": [
+     {
+      "n": "Highest WER",
+      "d": "The highest `WER` of any `Group`."
+     },
+     {
+      "n": "Lowest WER",
+      "d": "The lowest `WER` of any `Group`."
+     },
+     {
+      "n": "WER",
+      "d": "Word error rate: the scribe's word mistakes divided by the words really said, counted over all of one group's recordings."
+     },
+     {
+      "n": "Group",
+      "d": "Patients who share one value of one trait, such as race, ethnicity, sex, age band or language. Compare groups within one trait at a time.",
+      "x": "{PATIENT_RACE.PATIENT_RACE_C_NAME}, {PATIENT.ETHNIC_GROUP_C_NAME}, {PATIENT.SEX_C_NAME}, age band from {PATIENT.BIRTH_DATE} or {PAT_SPOKEN_LANG.PAT_SPOKEN_LANG_C_NAME}",
+      "w": "patients who share one value, matched to recordings by {PAT_ENC.PAT_ID} and {PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT}"
+     },
+     {
+      "n": "Substitutions",
+      "d": "Words the scribe wrote down as a different word.",
+      "x": "[substitutions per session|vendor, from audio]"
+     },
+     {
+      "n": "Deletions",
+      "d": "Words that were said and the scribe left out.",
+      "x": "[deletions per session|vendor, from audio]"
+     },
+     {
+      "n": "Insertions",
+      "d": "Words the scribe wrote that nobody said.",
+      "x": "[insertions per session|vendor, from audio]"
+     },
+     {
+      "n": "Reference words",
+      "d": "All the words in the correct transcript, the one a person checked against the audio.",
+      "x": "[words in the checked transcript, per session|vendor, from audio]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "PATIENT: one row per patient.",
+     "PATIENT_RACE: one row per race per patient. Pick a rule for patients with more than one race and use it throughout.",
+     "PAT_SPOKEN_LANG: one row per language per patient.",
+     "PAT_ENC: one row per visit.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit. A session can take more than one line, so count each AMBIENT_SESSION_IDENT once.",
+     "Join the patient tables on PAT_ID. Look up each session's PAT_ENC_CSN_ID in PAT_ENC to get the patient's PAT_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Substitutions, Deletions, Insertions, Reference words",
+      "t": "Audio and transcripts stay with the vendor. Ask the vendor for the four counts for each session, with its session ID, so you can regroup sessions yourself. Add the counts up within each group."
+     }
+    ],
+    "checks": [
+     "Groups come from the patient, but the clinician's voice and room noise can also cause a gap. Score only the patient's speech, or ask the vendor for speaker labels.",
+     "Show the number of sessions behind each group. A group with few sessions gives an unstable gap.",
+     "Confirm the vendor uses the same session ID as AMBIENT_SESSION_IDENT before matching its counts."
+    ],
+    "sheet": "ASR Demographic Word Error Parity (DWEP)",
+    "desc": "Measures parity in transcription word error rates (WER) across demographic subgroups relevant for ambient AI documentation (e.g., race, language/dialect, age cohorts). Compute WER for each subgroup and assess whether disparities exceed an acceptable threshold. Lower disparity indicates more equitable transcription performance across groups.",
+    "use": "To systematically assess whether the speech recognition component of ambient AI transcribes diverse clinician/patient speech with similar accuracy, highlighting potential demographic biases that could propagate into clinical documentation.",
+    "bench": "Max absolute WER gap ≤ 0.10 between any two key demographic groups (e.g., Black vs White speakers, non-native accents vs native), where WER is computed as (S + D + I)/N for each group."
+   },
+   {
+    "id": "cdaeg",
+    "name": "Gender and Accent Error Gap",
+    "row": 10,
+    "s": "partly",
+    "main": "PATIENT, PATIENT_4, PAT_ENC_AMBIENT_SESSIONS",
+    "eq": [
+     "Largest gap = `Highest WER` − `Lowest WER`, worked out once across the `Gender groups` and once across the `Accent groups`"
+    ],
+    "vars": [
+     {
+      "n": "Highest WER",
+      "d": "The highest `WER` of any group."
+     },
+     {
+      "n": "Lowest WER",
+      "d": "The lowest `WER` of any group."
+     },
+     {
+      "n": "WER",
+      "d": "Word error rate: the scribe's word mistakes divided by the words really said, for one group of speakers.",
+      "x": "[word error rate per session|vendor, from audio]"
+     },
+     {
+      "n": "Gender groups",
+      "d": "Speakers split by gender.",
+      "x": "Patient speech: {PATIENT.SEX_C_NAME}, {PATIENT_4.GENDER_IDENTITY_C_NAME} or {PATIENT_4.SEX_ASGN_AT_BIRTH_C_NAME}\nOther speakers: [each speaker's gender|voluntary self-report]",
+      "w": "Patient speech: the patient on each recording, found through {PAT_ENC.PAT_ID} and sent to the vendor with {PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT}"
+     },
+     {
+      "n": "Accent groups",
+      "d": "Speakers split by accent or dialect.",
+      "x": "[each speaker's accent or dialect|voluntary self-report]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "PATIENT: one row per patient.",
+     "PATIENT_4: one row per patient.",
+     "PAT_ENC: one row per visit.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit. A session can take more than one line, so count each AMBIENT_SESSION_IDENT once.",
+     "Join PATIENT to PATIENT_4 on PAT_ID. Look up each session's PAT_ENC_CSN_ID in PAT_ENC to get the patient's PAT_ID."
+    ],
+    "gaps": [
+     {
+      "v": "WER",
+      "t": "Audio and transcripts stay with the vendor. Ask the vendor for the word error rate of each session against a checked transcript, with its session ID."
+     },
+     {
+      "v": "Gender groups",
+      "t": "Ask clinicians and other speakers to give their gender, voluntarily. Ask the vendor to label who is speaking in each part of a recording."
+     },
+     {
+      "v": "Accent groups",
+      "t": "Epic has no accent column, and spoken language is not accent. Ask speakers to describe their accent, voluntarily. Clinicians talk more than patients, so survey them too (first language, region) and group by clinician as well."
+     }
+    ],
+    "checks": [
+     "The patient columns for sex and gender can disagree. Pick one and say which."
+    ],
+    "sheet": "Cross-Demographic ASR Gender & Accent Error Gap (CDAEG)",
+    "desc": "Measures absolute differences in ASR word error rates (WER) across key demographic categories such as gender and dialect/accent groups. Compute WER for each subgroup and calculate the maximum observed gap. A smaller gap indicates lower bias and more equitable transcription performance across diverse users.",
+    "use": "To detect and quantify systematic disparities in speech transcription quality by demographic characteristics that impact downstream ambient AI documentation quality and fairness of clinical records.",
+    "bench": "Max WER gap ≤ 0.15 across defined demographic subgroups (gender, dialect/accent). Compute as: CDAEG = max (|WERgroupi - WERgroupi|)"
+   },
+   {
+    "id": "mtr",
+    "name": "Medical Term Recall Rate",
+    "row": 11,
+    "s": "partly",
+    "main": "HNO_PLAIN_TEXT",
+    "eq": [
+     "Recall = `Terms captured` ÷ `Terms said`"
+    ],
+    "vars": [
+     {
+      "n": "Terms captured",
+      "d": "How many of the `Terms said` the scribe's note got right.",
+      "x": "count [terms a reviewer finds written correctly in the note|reviewer]",
+      "w": "among the `Terms said`, checked by a reviewer against {HNO_PLAIN_TEXT.NOTE_TEXT}"
+     },
+     {
+      "n": "Terms said",
+      "d": "The medical words in the correct transcript of the visit: diagnoses, medicines, procedures and the like.",
+      "x": "count [medical terms a reviewer marks in the checked transcript|vendor transcript and reviewer]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "HNO_PLAIN_TEXT: one row per chunk of note text. Only notes stored as plain text are in it."
+    ],
+    "gaps": [
+     {
+      "v": "Terms captured",
+      "t": "A reviewer checks each marked term against the note text and marks the ones the note got right."
+     },
+     {
+      "v": "Terms said",
+      "t": "The export has no audio or transcript. Get the checked transcript for each visit from the vendor. A reviewer marks the medicines, procedures and diagnoses in it, for a sample of visits."
+     }
+    ],
+    "checks": [
+     "A long note spans several rows. Put all its chunks together before review.",
+     "Score the AI draft apart from the signed note, which has the clinician's edits."
+    ],
+    "sheet": "medical term recall rate (abridge)",
+    "desc": "Fraction of clinically relevant medical terms in the reference transcript that are correctly captured by the AI system. Measures how well the system captures terms like diagnoses, medications, procedures, etc., which are critical to safe clinical documentation.",
+    "use": "To evaluate how accurately an ambient AI transcription system captures medically meaningful language as part of automated clinical note generation, reducing clinically significant errors relative to human ground truth.",
+    "bench": "Benchmark against human-annotated gold transcripts from real clinical conversations or published clinical ASR evaluations. MTR = (# correctly captured medical terms) / (# medical terms in reference). Higher values (for example ≥0.90) indicate stronger clinical fidelity."
+   }
+  ]
+ },
+ {
+  "grp": "Safety and reliability",
+  "items": [
+   {
+    "id": "cnser",
+    "name": "Clinical Note Safety Error Rate",
+    "row": 13,
+    "s": "partly",
+    "main": "HNO_INFO, PAT_ENC_AMBIENT_SESSIONS",
+    "eq": [
+     "CNSER = `Notes with a harmful error` ÷ `Notes reviewed`"
+    ],
+    "vars": [
+     {
+      "n": "Notes with a harmful error",
+      "d": "Reviewed notes with at least one mistake that could cause moderate or severe harm to the patient.",
+      "x": "count [notes where a clinician finds an error that could cause moderate or severe harm|clinician review]",
+      "w": "among the `Notes reviewed`"
+     },
+     {
+      "n": "Notes reviewed",
+      "d": "The scribe notes a clinician checked, picked at random.",
+      "x": "count distinct {HNO_INFO.NOTE_ID}",
+      "w": "a random sample of rows where {HNO_INFO.PAT_ENC_CSN_ID} has a row in {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID} and {HNO_INFO.IP_NOTE_TYPE_C_NAME} is a note type the scribe drafts, usually the progress note"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Warning sign between reviews",
+      "x": "share of scribe notes with an addendum: a note whose {HNO_INFO.SIGNED_NOTE_ID} is the scribe note. Leave out cosign notes, which point the same way, by their {HNO_INFO.IP_NOTE_TYPE_C_NAME}"
+     }
+    ],
+    "rows": [
+     "HNO_INFO: one row per note. An addendum (a note added later to a signed note) is its own row, and SIGNED_NOTE_ID points at the note it adds to.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit.",
+     "Join on PAT_ENC_CSN_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Notes with a harmful error",
+      "t": "Epic has no column that says an error happened. Each month, two clinicians score the sample against the vendor's audio or transcript, with the harm rubric from the study the spreadsheet cites. Safety event reports add a second source of errors."
+     }
+    ],
+    "checks": [
+     "SIGNED_NOTE_ID is filled for addenda and for cosign notes (a second clinician's signature on a note), so it cannot pick out either. Filter on IP_NOTE_TYPE_C_NAME instead.",
+     "Score the AI draft apart from the signed note, which has the clinician's edits.",
+     "Draw the sample evenly across clinicians."
+    ],
+    "sheet": "Clinical Note Safety Error Rate (CNSER)",
+    "desc": "Measures the rate of clinically relevant content errors in ambient AI–generated clinical documentation that have potential to cause moderate-to-severe patient harm, based on standardized error classification against professional transcriptions and expert review. A lower CNSER indicates higher safety and reliability of ambient AI outputs.",
+    "use": "To quantify real-world safety risk in ambient AI clinical documentation by identifying how often AI introduces errors with harm potential relative to clinician standards.",
+    "bench": "CNSER ≤ 0.05 (≤5% of clinical notes contain ≥1 moderate-to-severe harm-potential error) across a representative simulated or real clinical encounter set; computed as (# notes with harm-potential errors) / (total notes evaluated)."
+   },
+   {
+    "id": "csep",
+    "name": "Clinically Significant Error Proportion",
+    "row": 14,
+    "s": "partly",
+    "main": "HNO_INFO, PAT_ENC_AMBIENT_SESSIONS",
+    "eq": [
+     "CSEP = `Notes with a significant error` ÷ `Notes reviewed`"
+    ],
+    "vars": [
+     {
+      "n": "Notes with a significant error",
+      "d": "Reviewed notes with at least one mistake that could change the patient's care.",
+      "x": "count [notes where a clinician finds an error that could change the patient's care|clinician review]",
+      "w": "among the `Notes reviewed`"
+     },
+     {
+      "n": "Notes reviewed",
+      "d": "The scribe notes a clinician checked, picked at random.",
+      "x": "count distinct {HNO_INFO.NOTE_ID}",
+      "w": "a random sample of rows where {HNO_INFO.PAT_ENC_CSN_ID} has a row in {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID} and {HNO_INFO.IP_NOTE_TYPE_C_NAME} is a note type the scribe drafts, usually the progress note"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Warning sign between reviews",
+      "x": "share of scribe notes with an addendum: a note whose {HNO_INFO.SIGNED_NOTE_ID} is the scribe note. Leave out cosign notes, which point the same way, by their {HNO_INFO.IP_NOTE_TYPE_C_NAME}"
+     }
+    ],
+    "rows": [
+     "HNO_INFO: one row per note. An addendum (a note added later to a signed note) is its own row, and SIGNED_NOTE_ID points at the note it adds to.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit.",
+     "Join on PAT_ENC_CSN_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Notes with a significant error",
+      "t": "Epic has no column that says an error happened. Each month, two clinicians score the sample against the vendor's audio or transcript, with a written rubric for errors that could change care, a lower bar than harm."
+     }
+    ],
+    "checks": [
+     "SIGNED_NOTE_ID is filled for addenda and for cosign notes (a second clinician's signature on a note), so it cannot pick out either. Filter on IP_NOTE_TYPE_C_NAME instead.",
+     "Score the AI draft apart from the signed note, which has the clinician's edits.",
+     "Edits and addenda after signing are not errors. If you use them to pick extra notes for review, score those apart from the random sample."
+    ],
+    "sheet": "Clinically Significant Error Proportion (CSEP)",
+    "desc": "Measures the proportion of ambient AI–generated clinical notes that contain at least one clinically significant documentation error, where errors are identified via professional review and classified as having potential to affect patient care. A lower CSEP reflects higher safety and reliability of the AI system in producing accurate and safe clinical documentation.",
+    "use": "To evaluate whether ambient AI documentation systems reliably produce safe outputs by objectively quantifying clinically significant errors rather than generic error counts.",
+    "bench": "CSEP ≤ 0.10 (≤10 % of notes containing ≥1 clinically significant error) across a representative test set of encounters; computed as (# notes with ≥1 clinically significant error) / (total notes evaluated)"
+   },
+   {
+    "id": "uasrs",
+    "name": "Usability-Adjusted Safety Reliability Score",
+    "row": 15,
+    "s": "partly",
+    "main": "NOTE_EDIT_TRAIL",
+    "eq": [
+     "UASRS = 0.6 × `SUS score` + 0.4 × `After-hours score`"
+    ],
+    "vars": [
+     {
+      "n": "SUS score",
+      "d": "The average System Usability Scale score, from 0 to 100. SUS is a ten-question survey on how easy a tool is to use.",
+      "x": "[SUS score, 0 to 100|survey]"
+     },
+     {
+      "n": "After-hours score",
+      "d": "The percent drop in `After-hours work` from the Before weeks to the After weeks. The spreadsheet gives no rule for fitting it to 0 to 100, so write yours down."
+     },
+     {
+      "n": "After-hours work",
+      "d": "The time a clinician spends on notes outside clinic hours.",
+      "x": "[minutes on notes outside clinic hours|Epic Signal or another activity report]",
+      "alt": "share of {NOTE_EDIT_TRAIL.IP_ACTION_DTTM}",
+      "altw": "note actions outside the clinician's clinic hours, out of all note actions in the same weeks"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "NOTE_EDIT_TRAIL: one row per action on a note. IP_ACTION_DTTM is its local time."
+    ],
+    "gaps": [
+     {
+      "v": "SUS score",
+      "t": "Epic does not hold survey answers. Give clinicians who use the scribe the ten-question SUS in a survey tool, and score it from 0 to 100."
+     },
+     {
+      "v": "After-hours work",
+      "t": "The export does not measure active time. Ask your Epic analyst for an activity report such as Epic Signal. The stand-in gives a share and no minutes."
+     }
+    ],
+    "checks": [
+     "No column says who acted. Write down how you tie each action to a clinician, and each clinician's clinic hours.",
+     "Report the survey part and the after-hours part on their own as well as the combined score."
+    ],
+    "sheet": "Usability-Adjusted Safety Reliability Score (UASRS)",
+    "desc": "A composite metric combining System Usability Scale (SUS) scores with after-hours documentation burden change to evaluate whether ambient AI improves safe, reliable, and usable clinical workflow outcomes. SUS captures perceived usability; after-hours burden reduction reflects reliability of documentation completion without risking clinician burnout or workflow strain.",
+    "use": "To quantify how reliably ambient AI can be integrated into clinical workflow without introducing usability friction that can indirectly compromise safety (e.g., increased after-hours work leading to clinician fatigue and error).",
+    "bench": "UASRS ≥ 70 (on 0-100 scale), where: UASRS = (Normalized SUS score) × 0.6 + (After-hours work reduction % normalized to 0-100) × 0.4"
+   },
+   {
+    "id": "consent",
+    "name": "Consent and Review Compliance",
+    "row": 16,
+    "s": "partly",
+    "main": "PAT_ENC, PAT_ENC_AMBIENT_SESSIONS",
+    "eq": [
+     "Consent rate = `Visits with consent` ÷ `Scribe visits`",
+     "Full compliance = a `Consent rate` of 1, a `Written procedure`, and a yes for Signature required on the Clinician Review and Sign-Off Rate card"
+    ],
+    "vars": [
+     {
+      "n": "Visits with consent",
+      "d": "Scribe visits where the patient's permission to record was written down before the recording started.",
+      "x": "Filed in Epic: count distinct {PAT_ENC.PAT_ENC_CSN_ID}\nVendor app: [consent flag per session|vendor app]",
+      "w": "Filed in Epic: `Scribe visits` where {PAT_ENC.CONSENT_TYPE_C_NAME} is your recording consent value\nVendor app: matched to each session on {PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT}"
+     },
+     {
+      "n": "Scribe visits",
+      "d": "Visits where the scribe recorded.",
+      "x": "count distinct {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID}"
+     },
+     {
+      "n": "Written procedure",
+      "d": "Your organization's written steps for getting consent and for checking AI notes before they are final.",
+      "x": "[written steps for consent and note review|your policy documents]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "PAT_ENC: one row per visit. CONSENT_TYPE_C_NAME is a pick-list (a list of allowed values) your site defines.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit.",
+     "Join on PAT_ENC_CSN_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Visits with consent",
+      "t": "If patients consent in the vendor app, get the vendor's consent flag per session, with the session ID."
+     },
+     {
+      "v": "Written procedure",
+      "t": "This is a policy document outside Epic. Ask the team that owns your scribe policy for it, and check it covers both consent and note review."
+     }
+    ],
+    "checks": [
+     "Ask your Epic analyst which CONSENT_TYPE_C_NAME value means consent to record, and confirm staff record it before recording starts.",
+     "A signature does not prove review. Check clinician attestation logs or other review evidence on their own."
+    ],
+    "sheet": "Informed Consent and Documentation Review Compliance Rate",
+    "desc": "Measures whether clinicians using an AI scribe have a documented process for obtaining informed consent prior to recording sessions and for reviewing and editing AI-generated clinical notes before they are finalized in the health record, assessed through policy review and clinician attestation logs.",
+    "use": "To ensure safe and ethically compliant use of ambient AI scribes by verifying that required consent and clinician oversight safeguards are in place before and during deployment.",
+    "bench": "Full compliance with documented consent procedures and mandatory clinician review prior to note finalization; specific quantitative threshold not standardized."
+   },
+   {
+    "id": "retention",
+    "name": "Audio and Transcript Retention",
+    "row": 17,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "No arithmetic. The assessment is three answers: `Audio kept for`, `Transcript kept for` and `Clinician control`."
+    ],
+    "vars": [
+     {
+      "n": "Audio kept for",
+      "d": "How long the vendor keeps the recording of a visit.",
+      "x": "[audio retention period|vendor settings]"
+     },
+     {
+      "n": "Transcript kept for",
+      "d": "How long the vendor keeps the typed-out words of a visit.",
+      "x": "[transcript retention period|vendor settings]"
+     },
+     {
+      "n": "Clinician control",
+      "d": "Whether a clinician can choose how long both are kept, or delete a session.",
+      "x": "[clinician can set the retention period or delete a session|vendor settings]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Old sessions to spot-check",
+      "x": "a few distinct {PAT_ENC_AMBIENT_SESSIONS.AMBIENT_SESSION_IDENT} whose {PAT_ENC_AMBIENT_SESSIONS.CONTACT_DATE} is older than the vendor's stated retention period"
+     }
+    ],
+    "rows": [
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit. A session can take more than one line, so count each AMBIENT_SESSION_IDENT once."
+    ],
+    "gaps": [
+     {
+      "v": "Audio kept for, Transcript kept for, Clinician control",
+      "t": "None of this is in the export. Read the contract and the vendor admin console. Epic does not record vendor deletion, so send the vendor a few old sessions and ask it to confirm their audio and transcripts are gone."
+     }
+    ],
+    "checks": [],
+    "sheet": "Audio and Transcript Data Retention Control Assessment",
+    "desc": "Evaluates whether an ambient AI scribe minimizes storage of session audio and transcripts and provides clinician control over data retention duration, assessed through vendor documentation review and configuration inspection.",
+    "use": "To ensure that ambient AI scribes adhere to data minimization principles and reduce risk of privacy breaches involving sensitive clinical information.",
+    "bench": "Not specified in study."
+   }
+  ]
+ },
+ {
+  "grp": "Accountability and privacy",
+  "items": [
+   {
+    "id": "signoff",
+    "name": "Clinician Review and Sign-Off Rate",
+    "row": 18,
+    "s": "partly",
+    "main": "NOTE_ENC_INFO, HNO_INFO, PAT_ENC_AMBIENT_SESSIONS",
+    "eq": [
+     "Sign-off rate = `Signed notes` ÷ `Scribe notes`",
+     "Enforced = `Signature required`, a yes or a no"
+    ],
+    "vars": [
+     {
+      "n": "Signed notes",
+      "d": "Scribe notes that a licensed clinician signed.",
+      "x": "count distinct {NOTE_ENC_INFO.NOTE_ID}",
+      "w": "`Scribe notes` whose latest version has {NOTE_ENC_INFO.NOTE_STATUS_C_NAME} = Signed, Cosigned or Finalized"
+     },
+     {
+      "n": "Scribe notes",
+      "d": "All the notes the scribe drafted.",
+      "x": "count distinct {HNO_INFO.NOTE_ID}",
+      "w": "rows where {HNO_INFO.PAT_ENC_CSN_ID} has a row in {PAT_ENC_AMBIENT_SESSIONS.PAT_ENC_CSN_ID} and {HNO_INFO.IP_NOTE_TYPE_C_NAME} is a note type the scribe drafts, which leaves out addenda and cosign notes"
+     },
+     {
+      "n": "Signature required",
+      "d": "Whether the system refuses to make an AI note final until a clinician signs it.",
+      "x": "[setting that blocks a final note until a clinician signs|Epic build review]"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "NOTE_ENC_INFO: one row per version of a note. It has the status, author and file time.",
+     "HNO_INFO: one row per note. UNSIGNED_YN is a quick filter for unsigned notes.",
+     "PAT_ENC_AMBIENT_SESSIONS: one row per session line on a visit.",
+     "Join NOTE_ENC_INFO to HNO_INFO on NOTE_ID, and HNO_INFO to PAT_ENC_AMBIENT_SESSIONS on PAT_ENC_CSN_ID."
+    ],
+    "gaps": [
+     {
+      "v": "Signature required",
+      "t": "This is a build setting, meaning how your site set up the EHR. Ask your Epic analyst to check the note type setup for a rule that requires a signature before an AI note is final."
+     }
+    ],
+    "checks": [
+     "AUTHOR_PRVD_TYPE_C_NAME describes each version's author, who may not be the signer. Confirm which statuses count as signed, and agree which signers count as licensed before counting.",
+     "A signature, or a short time to sign, does not show how carefully the note was read."
+    ],
+    "sheet": "Clinician Review and Sign-Off Enforcement Rate",
+    "desc": "Assesses whether AI-generated clinical notes require mandatory clinician review, editing, and sign-off before being finalized in the medical record, verified through workflow configuration review and audit logs.",
+    "use": "To ensure that clinical responsibility and accountability remain with licensed clinicians when using ambient AI scribes.",
+    "bench": "Not specified in study."
+   },
+   {
+    "id": "training",
+    "name": "Training Data Use Disclosure",
+    "row": 19,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "No arithmetic. The assessment is three answers: `Trains on your data`, `Opt-in or opt-out` and `Clinician can restrict`."
+    ],
+    "vars": [
+     {
+      "n": "Trains on your data",
+      "d": "Whether the vendor says it uses your sessions to train its models.",
+      "x": "[vendor trains on session data|vendor policy]"
+     },
+     {
+      "n": "Opt-in or opt-out",
+      "d": "Whether training happens only if you say yes (opt-in) or happens unless you say no (opt-out).",
+      "x": "[opt-in or opt-out|contract]"
+     },
+     {
+      "n": "Clinician can restrict",
+      "d": "Whether a clinician can stop their sessions being used for anything beyond the note.",
+      "x": "[clinician can restrict secondary use|vendor settings]"
+     }
+    ],
+    "extra": [],
+    "rows": [],
+    "gaps": [
+     {
+      "v": "Trains on your data, Opt-in or opt-out, Clinician can restrict",
+      "t": "None of this is in the export. Read the vendor policy, the contract, the vendor settings and the BAA (business associate agreement). Record each answer with the document version and date, since answers change between contract cycles."
+     }
+    ],
+    "checks": [],
+    "sheet": "LLM Training Data Use Disclosure and Control Assessment",
+    "desc": "Evaluates whether the AI scribe vendor discloses if session data are used for model training, whether such use is opt-in or opt-out, and whether clinicians can restrict secondary data use, assessed via vendor policy and configuration review.",
+    "use": "To ensure transparency and clinician control over secondary use of sensitive clinical data in ambient AI systems.",
+    "bench": "Not specified in study."
+   }
+  ]
+ },
+ {
+  "grp": "Financial",
+  "items": [
+   {
+    "id": "icer",
+    "name": "Cost per QALY (ICER)",
+    "row": 20,
+    "s": "no",
+    "main": "none",
+    "eq": [
+     "ICER = ( `Cost with scribe` − `Cost of usual care` ) ÷ ( `QALYs with scribe` − `QALYs of usual care` )"
+    ],
+    "vars": [
+     {
+      "n": "Cost with scribe",
+      "d": "Everything it costs to deliver care when clinicians use the scribe, including the scribe itself.",
+      "x": "[cost of care with the scribe|finance]"
+     },
+     {
+      "n": "Cost of usual care",
+      "d": "The cost of the same care without the scribe.",
+      "x": "[cost of usual care|finance]"
+     },
+     {
+      "n": "QALYs with scribe",
+      "d": "Quality-adjusted life years with the scribe. One QALY is one year of life in full health.",
+      "x": "[QALYs with the scribe|health economic model]"
+     },
+     {
+      "n": "QALYs of usual care",
+      "d": "Quality-adjusted life years without the scribe.",
+      "x": "[QALYs of usual care|health economic model]"
+     }
+    ],
+    "extra": [
+     {
+      "n": "Charges, one input to the cost side",
+      "x": "sum of {ARPB_TRANSACTIONS.AMOUNT} where {ARPB_TRANSACTIONS.TX_TYPE_C_NAME} = Charge and {ARPB_TRANSACTIONS.VOID_DATE} is empty"
+     }
+    ],
+    "rows": [
+     "ARPB_TRANSACTIONS: one row per professional charge, payment or adjustment."
+    ],
+    "gaps": [
+     {
+      "v": "Cost with scribe, Cost of usual care",
+      "t": "Ask your finance team for cost accounting figures, including the scribe itself. Charges are what was billed, not what care cost. A cost-to-charge ratio (what care costs per dollar billed) turns them into part of the cost side."
+     },
+     {
+      "v": "QALYs with scribe, QALYs of usual care",
+      "t": "No EHR records QALYs. Build a health economic model outside Epic."
+     }
+    ],
+    "checks": [],
+    "sheet": "Incremental Cost-Effectiveness Ratio (ICER), $/QALY",
+    "desc": "ICER quantifies the additional cost required to gain one additional quality-adjusted life year (QALY) when adopting an AI system versus standard of care: ICER = (Cost_AI − Cost_SOC) / (QALY_AI − QALY_SOC).",
+    "use": "To determine whether deploying an AI system is economically justified relative to alternatives, supporting procurement, reimbursement, and governance decisions.",
+    "bench": "ICER ≤ $50,000–$150,000 per QALY gained (cost-effectiveness threshold commonly used in US health economic evaluation)"
+   },
+   {
+    "id": "rvu-pct",
+    "name": "Weekly RVU Uplift (%)",
+    "row": 21,
+    "s": "partly",
+    "main": "ARPB_TRANSACTIONS, INV_CLM_LN_ADDL, INV_BASIC_INFO, INV_TX_PIECES",
+    "eq": [
+     "Uplift = ( `RVUs after` − `RVUs before` ) ÷ `RVUs before`",
+     "Weekly RVUs = `RVU weight` × `Units`, added up over one clinician's `Charges` in one week"
+    ],
+    "vars": [
+     {
+      "n": "RVUs before",
+      "d": "The average `Weekly RVUs` per clinician in the Before weeks."
+     },
+     {
+      "n": "RVUs after",
+      "d": "The average `Weekly RVUs` per clinician in the After weeks."
+     },
+     {
+      "n": "RVU weight",
+      "d": "The work value Medicare gives one billing code. RVU means relative value unit, and a harder service has a bigger weight.",
+      "x": "[work RVU for the code, modifier and service year|CMS fee schedule file]",
+      "w": "looked up by {INV_CLM_LN_ADDL.PROC_OR_REV_CODE} and {ARPB_TRANSACTIONS.MODIFIER_ONE} on the charge's first claim where {INV_BASIC_INFO.FILING_ORDER_C_NAME} = primary, found through {INV_TX_PIECES.TX_ID}"
+     },
+     {
+      "n": "Units",
+      "d": "How many times the service was billed on one charge.",
+      "x": "{ARPB_TRANSACTIONS.PROCEDURE_QUANTITY}"
+     },
+     {
+      "n": "Charges",
+      "d": "The services a clinician billed. Count each real charge once and leave out voided or reversed ones.",
+      "x": "{ARPB_TRANSACTIONS.SERV_PROVIDER_ID_PROV_NAME} and week of {ARPB_TRANSACTIONS.SERVICE_DATE}",
+      "w": "rows where {ARPB_TRANSACTIONS.TX_TYPE_C_NAME} = Charge and {ARPB_TRANSACTIONS.VOID_DATE} is empty, grouped by clinician and week"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "ARPB_TRANSACTIONS: one row per professional charge, payment or adjustment. Count each charge once.",
+     "INV_TX_PIECES: one row per charge on an invoice line. Its TX_ID links the charge to the invoice.",
+     "INV_CLM_LN_ADDL: one row per claim line per claim sent. A claim sent again, or sent to a second insurer, repeats the line, so keep only the first claim to the primary (main) insurer.",
+     "INV_BASIC_INFO: one row per claim sent. FILING_ORDER_C_NAME is its filing order, such as primary.",
+     "Join ARPB_TRANSACTIONS to INV_TX_PIECES on TX_ID. From that invoice, go to its claims in INV_BASIC_INFO and their lines in INV_CLM_LN_ADDL. Ask your Epic analyst for the invoice keys."
+    ],
+    "gaps": [
+     {
+      "v": "RVU weight",
+      "t": "The export has the billed code but no RVU weights. Look up the work RVU for each code, modifier and service year in the public CMS (Medicare) physician fee schedule file."
+     }
+    ],
+    "checks": [
+     "The spreadsheet does not say which part of the RVU to use. This page uses work RVUs.",
+     "The export gives the clinician as a name, and two clinicians can share one. Check names against a verified clinician list.",
+     "Use the same clinicians before and after, and the same rule for which weeks count, such as leaving out weeks a clinician was away. Leave out the last two or three weeks too, since those charges may not be posted yet."
+    ],
+    "sheet": "Weekly RVU uplift (% change)",
+    "desc": "Percent change in clinician weekly relative value units (RVUs) after ambient AI scribe access compared with baseline or controls. RVUs represent billable clinical output and are a standard health system revenue metric.",
+    "use": "To quantify whether ambient AI documentation systems produce measurable financial productivity gains (revenue-linked throughput) without degrading billing performance.",
+    "bench": "≥ +5.8% weekly RVU increase (ambient AI scribe access associated with 5.8% increase in weekly RVUs in large-scale ambulatory deployment study)."
+   },
+   {
+    "id": "enc-vol",
+    "name": "Weekly Encounter Volume Uplift (%)",
+    "row": 22,
+    "s": "yes",
+    "main": "PAT_ENC",
+    "eq": [
+     "Uplift = ( `Visits after` − `Visits before` ) ÷ `Visits before`"
+    ],
+    "vars": [
+     {
+      "n": "Visits before",
+      "d": "The average `Weekly visits` per clinician in the Before weeks."
+     },
+     {
+      "n": "Visits after",
+      "d": "The average `Weekly visits` per clinician in the After weeks."
+     },
+     {
+      "n": "Weekly visits",
+      "d": "The completed visits one clinician had in one week.",
+      "x": "count distinct {PAT_ENC.PAT_ENC_CSN_ID}",
+      "w": "rows where {PAT_ENC.APPT_STATUS_C_NAME} = Completed, for one {PAT_ENC.VISIT_PROV_ID_PROV_NAME} in one week of {PAT_ENC.CONTACT_DATE}"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "PAT_ENC: one row per visit."
+    ],
+    "gaps": [],
+    "checks": [
+     "Count visits from PAT_ENC. PAT_ENC_APPT has one row per provider per appointment, so a visit with two providers shows up twice there.",
+     "The export gives the clinician as a name, and two clinicians can share one. Check names against a verified clinician list.",
+     "Use the same clinicians before and after, and the same rule for which weeks count, such as leaving out weeks a clinician was away."
+    ],
+    "sheet": "Weekly encounter volume uplift (% change)",
+    "desc": "Percent change in clinician encounters per week after ambient AI scribe adoption vs baseline or controls. This is a direct operational revenue driver.",
+    "use": "Quantify financial productivity benefit from ambient scribe deployment through increased throughput.",
+    "bench": "≥ +2.8% encounters/week (study found ambient AI scribe access associated with 2.8% increase in encounters per week)."
+   },
+   {
+    "id": "rvu-abs",
+    "name": "RVU Change per Physician-Week",
+    "row": 23,
+    "s": "partly",
+    "main": "ARPB_TRANSACTIONS, INV_CLM_LN_ADDL, INV_BASIC_INFO, INV_TX_PIECES",
+    "eq": [
+     "Change = `RVUs after` − `RVUs before`",
+     "Weekly RVUs = `RVU weight` × `Units`, added up over one clinician's `Charges` in one week"
+    ],
+    "vars": [
+     {
+      "n": "RVUs before",
+      "d": "The average `Weekly RVUs` per clinician in the Before weeks."
+     },
+     {
+      "n": "RVUs after",
+      "d": "The average `Weekly RVUs` per clinician in the After weeks."
+     },
+     {
+      "n": "RVU weight",
+      "d": "The work value Medicare gives one billing code. RVU means relative value unit, and a harder service has a bigger weight.",
+      "x": "[work RVU for the code, modifier and service year|CMS fee schedule file]",
+      "w": "looked up by {INV_CLM_LN_ADDL.PROC_OR_REV_CODE} and {ARPB_TRANSACTIONS.MODIFIER_ONE} on the charge's first claim where {INV_BASIC_INFO.FILING_ORDER_C_NAME} = primary, found through {INV_TX_PIECES.TX_ID}"
+     },
+     {
+      "n": "Units",
+      "d": "How many times the service was billed on one charge.",
+      "x": "{ARPB_TRANSACTIONS.PROCEDURE_QUANTITY}"
+     },
+     {
+      "n": "Charges",
+      "d": "The services a clinician billed. Count each real charge once and leave out voided or reversed ones.",
+      "x": "{ARPB_TRANSACTIONS.SERV_PROVIDER_ID_PROV_NAME} and week of {ARPB_TRANSACTIONS.SERVICE_DATE}",
+      "w": "rows where {ARPB_TRANSACTIONS.TX_TYPE_C_NAME} = Charge and {ARPB_TRANSACTIONS.VOID_DATE} is empty, grouped by clinician and week"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "ARPB_TRANSACTIONS: one row per professional charge, payment or adjustment. Count each charge once.",
+     "INV_TX_PIECES: one row per charge on an invoice line. Its TX_ID links the charge to the invoice.",
+     "INV_CLM_LN_ADDL: one row per claim line per claim sent. A claim sent again, or sent to a second insurer, repeats the line, so keep only the first claim to the primary (main) insurer.",
+     "INV_BASIC_INFO: one row per claim sent. FILING_ORDER_C_NAME is its filing order, such as primary.",
+     "Join ARPB_TRANSACTIONS to INV_TX_PIECES on TX_ID. From that invoice, go to its claims in INV_BASIC_INFO and their lines in INV_CLM_LN_ADDL. Ask your Epic analyst for the invoice keys."
+    ],
+    "gaps": [
+     {
+      "v": "RVU weight",
+      "t": "The export has the billed code but no RVU weights. Look up the work RVU for each code, modifier and service year in the public CMS (Medicare) physician fee schedule file."
+     }
+    ],
+    "checks": [
+     "The spreadsheet does not say which part of the RVU to use. This page uses work RVUs.",
+     "The export gives the clinician as a name, and two clinicians can share one. Check names against a verified clinician list.",
+     "Use the same clinicians before and after, and the same rule for which weeks count, such as leaving out weeks a clinician was away. Leave out the last two or three weeks too, since those charges may not be posted yet."
+    ],
+    "sheet": "ΔRVU per physician-week (absolute)",
+    "desc": "Difference in weekly RVUs per physician comparing ambient AI scribe adopters vs non-adopters/baseline. RVUs are the standard billing productivity unit used in health system finance.",
+    "use": "Quantify the direct revenue-linked productivity impact of ambient AI.",
+    "bench": "ΔRVU ≥ +1.81 RVUs/week per physician (reported as the increase associated with adoption; corresponds to ~5.8% uplift)."
+   },
+   {
+    "id": "ehr-min",
+    "name": "Documentation Time Reduction (min/day)",
+    "row": 24,
+    "s": "partly",
+    "main": "NOTE_EDIT_TRAIL",
+    "eq": [
+     "Minutes saved per day = `Median before` − `Median after`"
+    ],
+    "vars": [
+     {
+      "n": "Median before",
+      "d": "The middle value of `EHR minutes per day` across clinician days in the Before weeks."
+     },
+     {
+      "n": "Median after",
+      "d": "The middle value of `EHR minutes per day` across clinician days in the After weeks."
+     },
+     {
+      "n": "EHR minutes per day",
+      "d": "All the minutes one clinician spends in the EHR in one day: notes, orders, messages and chart review.",
+      "x": "[total EHR minutes per clinician per day|Epic Signal or another activity report]",
+      "alt": "last {NOTE_EDIT_TRAIL.IP_ACTION_DTTM} − first {NOTE_EDIT_TRAIL.IP_ACTION_DTTM}",
+      "altw": "the last and first action in each burst of editing, in minutes, added up over one clinician's local day"
+     }
+    ],
+    "extra": [],
+    "rows": [
+     "NOTE_EDIT_TRAIL: one row per action on a note. IP_ACTION_DTTM is its local time."
+    ],
+    "gaps": [
+     {
+      "v": "EHR minutes per day",
+      "t": "Note actions leave out orders, messages and chart review. Ask your Epic analyst for an activity report such as Epic Signal. The study the spreadsheet cites measured total EHR time, so the stand-in is not comparable with it."
+     }
+    ],
+    "checks": [
+     "A burst is a run of note actions with no pause longer than a cutoff you choose. Write the cutoff down, and label the result an estimate of note time only.",
+     "No column says who acted. Write down how you tie each action to a clinician.",
+     "The spreadsheet says median change. This card subtracts the two medians, which can differ from the median of each clinician's own change. Say which you report."
+    ],
+    "sheet": "Documentation time reduction (minutes/day)",
+    "desc": "Median change in total EHR time per day after ambient scribe introduction. Time saved translates to labor cost savings and/or increased revenue capacity.",
+    "use": "Support ROI modeling for ambient scribes via measurable clinician time savings.",
+    "bench": "≥ 19.95 minutes/day reduction in total EHR time (reported post-implementation vs baseline)."
+   }
+  ]
+ }
 ];
 
-const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const mono = s => esc(s).replace(/\b([A-Z][A-Z0-9_]{3,})\b/g, '<code>$1</code>');
-const chips = s => esc(s)
-  .replace(/\{([A-Z][A-Z0-9_]*)\.([A-Z][A-Z0-9_]*)\}/g, '<a class="v" href="https://open.epic.com/EHITables/GetTable/$1.htm" target="_blank" rel="noopener noreferrer"><span class="tb">$1</span>$2</a>')
-  .replace(/\{([A-Z][A-Z0-9_]*)\}/g, '<a class="v" href="https://open.epic.com/EHITables/GetTable/$1.htm" target="_blank" rel="noopener noreferrer"><span class="tb">$1</span>matching rows</a>')
-  .replace(/\[([^\]|]+)\|([^\]]+)\]/g, '<span class="x"><span>$1</span><span class="src">$2</span></span>');
-const formula = s => s.split('\n').map(l => l.startsWith('#') ? `<span class="ln"><span class="t">${chips(l.slice(1))}</span></span>` : `<span class="ln">${chips(l)}</span><span class="br"></span>`).join('');
+const S = { yes: 'Yes', partly: 'Partly', no: 'No' };
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// Where a variable stands: ok = in the export, p = partly, g = not in the export.
+// A variable takes on the sources of every variable its definition or source line names.
+function kinds(m) {
+  const info = {};
+  const refs = s => [...s.matchAll(/`([^`]+)`/g)].map(a => a[1]);
+  m.vars.forEach(v => {
+    const src = [v.x, v.w, v.alt, v.altw].filter(Boolean).join(' ');
+    const own = new Set();
+    if (/\{[A-Za-z][A-Za-z0-9_]*\./.test(src)) own.add('e');
+    if (/\[[^\]|]+\|/.test(src)) own.add('g');
+    info[v.n] = { own, refs: new Set(refs(v.d + ' ' + src)) };
+  });
+  m.eq.forEach(line => {
+    const i = line.indexOf(' = ');
+    if (i < 0) return;
+    const lhs = line.slice(0, i).trim();
+    info[lhs] = info[lhs] || { own: new Set(), refs: new Set() };
+    refs(line.slice(i + 3)).forEach(r => info[lhs].refs.add(r));
+  });
+  const walk = (n, seen) => {
+    if (!info[n] || seen.includes(n)) return new Set();
+    const out = new Set(info[n].own);
+    info[n].refs.forEach(r => walk(r, seen.concat(n)).forEach(x => out.add(x)));
+    return out;
+  };
+  const K = {};
+  Object.keys(info).forEach(n => { const s = walk(n, []); K[n] = s.has('g') ? (s.has('e') ? 'p' : 'g') : 'ok'; });
+  return K;
+}
+
+const tok = (n, K) => `<span class="tok ${K[n] && K[n] !== 'ok' ? K[n] : ''}">${esc(n)}</span>`;
+const link = (t) => CFG.link === 'epic' ? `https://open.epic.com/EHITables/GetTable/${t}.htm`
+  : CFG.link === 'athena' ? `https://docs.mydata.athenahealth.com/fhir-r4/StructureDefinition-athena-${CFG.pages[t] || t.toLowerCase()}-profile.html` : '';
+const chip = (t, c, row) => {
+  const inner = `<span class="tb">${t}</span>${c}${row ? `<span class="rw">${row}</span>` : ''}`;
+  return CFG.link ? `<a class="v" href="${link(t)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : `<span class="v">${inner}</span>`;
+};
+
+// One pass over a string: {TABLE.COLUMN} chips, [need|source] boxes, `variable` names, and bare table or column names.
+const NAMES = CFG.names.join('|');
+const CODE = CFG.link === 'athena'
+  ? `\\b((?:${NAMES})\\.[A-Za-z][A-Za-z0-9_.:\\-]*[A-Za-z0-9])`
+  : `\\b((?:[A-Z][A-Z0-9]*_[A-Z0-9_]+${NAMES ? '|' + NAMES : ''})(?:\\.[A-Z][A-Z0-9_]+)?)\\b`;
+const RX = new RegExp('\\{([A-Za-z][A-Za-z0-9_]*)\\.([A-Za-z0-9_.:\\-\\[\\]]+)\\}|\\[([^\\]|]+)\\|([^\\]]+)\\]|`([^`]+)`|' + CODE, 'g');
+// R maps a table to what one of its rows is. swap maps a variable name to the box that replaces it in a formula line.
+const rich = (s, K, src, R, swap) => esc(s).replace(RX, (all, t, c, need, from, ref, code) => {
+  if (t) return src ? chip(t, c, R && R[t]) : `<code>${t}.${c}</code>`;
+  if (need) return src ? `<span class="x"><span>${need}</span><span class="src">${from}</span></span>` : `${need} (${from})`;
+  if (ref) { const name = ref.replace(/&amp;/g, '&'); return swap && swap[name] ? swap[name]() : (K[name] !== undefined ? tok(ref, K) : ref); }
+  return `<code>${code}</code>`;
+});
+const rowLine = (s, K) => {
+  const m = /^([A-Za-z][A-Za-z0-9_]*): (.*)$/.exec(s);
+  return m ? `<code>${m[1]}</code>: ${rich(m[2], K, false)}` : rich(s, K, false);
+};
+
 const sum = document.getElementById('summary');
 const det = document.getElementById('detail');
 const all = DATA.flatMap(g => g.items);
@@ -568,21 +1360,62 @@ DATA.forEach(g => {
   sum.insertAdjacentHTML('beforeend', `<tr class="grp"><td colspan="3">${esc(g.grp)}</td></tr>`);
   det.insertAdjacentHTML('beforeend', `<h2>${esc(g.grp)}</h2>`);
   g.items.forEach(m => {
-    sum.insertAdjacentHTML('beforeend', `<tr><td><a href="#${m.id}">${esc(m.name)}</a></td><td><span class="status ${m.s}">${S[m.s]}</span></td><td>${mono(m.main)}</td></tr>`);
+    const K = kinds(m);
+    const mains = m.main === 'none' ? 'none' : m.main.split(',').map(t => `<code>${esc(t.trim())}</code>`).join(', ');
+    sum.insertAdjacentHTML('beforeend', `<tr><td><a href="#${m.id}">${esc(m.name)}</a></td><td><span class="status ${m.s}">${S[m.s]}</span></td><td>${mains}</td></tr>`);
+    // What one row of each table on this card is, to print inside the chips.
+    const R = {};
+    m.rows.forEach(x => { const p = /^([A-Za-z][A-Za-z0-9_]*): (one (?:row|record) per [^.]+)\./.exec(x); if (p) R[p[1]] = esc(p[2]); });
+    // A source read two ways ("Professional billing: ...", "Hospital billing: ...") gets one labelled line per reading.
+    const labelled = (l, f) => { const p = /^([A-Z][A-Za-z' ]{2,40}): (.*)$/.exec(l); return p ? `<span class="lab">${esc(p[1])}:</span> ${f(p[2])}` : f(l); };
+    const full = t => rich(t, K, true, R);
+    const plain = t => rich(t, K, true);
+    const body = t => { const lines = t.split('\n'); return lines.length === 1 ? full(lines[0]) : lines.map(l => `<span class="rd">${labelled(l, full)}</span>`).join(''); };
+    const leaf = m.vars.filter(v => v.x);
+    // The formula again, each variable that has a source swapped for a box holding that source.
+    const placed = new Set(), swap = {};
+    leaf.forEach(v => { swap[v.n] = () => { placed.add(v.n); return `<span class="grp ${K[v.n] !== 'ok' ? K[v.n] : ''}"><span class="gl">${esc(v.n)}</span><span class="gb">${body(v.x)}</span></span>`; }; });
+    const fx = m.eq.filter(l => [...l.matchAll(/`([^`]+)`/g)].some(a => swap[a[1]]))
+      .map(l => `<div class="ln fx">${rich(l, K, true, R, swap)}</div>`).join('');
+    const rest = leaf.filter(v => !placed.has(v.n)).map(v => `<div class="ln fx">${tok(v.n, K)} <span class="is">=</span> <span class="grp ${K[v.n] === 'g' ? 'g' : ''}"><span class="gb">${body(v.x)}</span></span></div>`).join('');
+    const stand = leaf.filter(v => v.alt).map(v => `<div class="ln fx"><span class="lab">Stand-in from the export:</span> ${tok(v.n, K)} <span class="is">&asymp;</span> <span class="grp"><span class="gb">${body(v.alt)}</span></span></div>`).join('');
+    const wbody = t => t.split('\n').map(l => labelled(l, plain)).join('<br>');
+    const wl = [];
+    leaf.forEach(v => {
+      if (v.w) wl.push(`<div class="ln wr">${tok(v.n, K)} ${wbody(v.w)}</div>`);
+      if (v.altw) wl.push(`<div class="ln wr">${tok(v.n, K)} <span class="lab">stand-in:</span> ${wbody(v.altw)}</div>`);
+    });
+    const src = fx + rest + stand
+      + (wl.length ? `<div class="sep">Which ${CFG.rowWord}s count</div>` + wl.join('') : '')
+      + (m.extra.length ? `<div class="sep">Also in the export, not part of the formula</div>`
+        + m.extra.map(e => `<div class="ln wr"><span class="lab">${esc(e.n)}:</span> ${plain(e.x)}</div>`).join('') : '');
+    const rows = m.rows.length ? `<ul>${m.rows.map(x => `<li>${rowLine(x, K)}</li>`).join('')}</ul>`
+      : `<span class="none">None. No variable on this card comes from the export.</span>`;
+    const gaps = m.gaps.length ? `<ul class="gaps">${m.gaps.map(x => `<li><div class="gv">${x.v.split(',').map(v => tok(v.trim(), K)).join(' ')}</div>${rich(x.t, K, false)}</li>`).join('')}</ul>`
+      : `<span class="none">None. Every variable is in the export.</span>`;
+    const checks = m.checks.length ? `<ul>${m.checks.map(x => `<li>${rich(x, K, false)}</li>`).join('')}</ul>` : `<span class="none">None.</span>`;
     det.insertAdjacentHTML('beforeend', `
       <div class="m" id="${m.id}">
         <h3>${esc(m.name)}</h3>
-        <div class="top"><span class="status ${m.s}">${S[m.s]}</span><span>${esc(m.what)}</span></div>
+        <div class="top"><span class="status ${m.s}">${S[m.s]}</span>${m.sheet !== m.name ? `<span>Spreadsheet name: ${esc(m.sheet)}</span>` : ''}</div>
+        <dl class="sheet">
+          <dt>Description</dt><dd>${esc(m.desc)}</dd>
+          <dt>Intended use</dt><dd>${esc(m.use)}</dd>
+          <dt>Benchmark</dt><dd>${esc(m.bench)}</dd>
+        </dl>
         <dl>
-          <dt>In words</dt><dd>${esc(m.w)}</dd>
-          <dt>With columns</dt><dd class="wide"><div class="f">${formula(m.f)}</div></dd>
-          <dt>What a row is</dt><dd><ul>${m.rows.map(x => `<li>${mono(x)}</li>`).join('')}</ul></dd>
-          <dt>Gaps and checks</dt><dd><ul>${m.gaps.map(x => `<li>${mono(x)}</li>`).join('')}</ul></dd>
+          <dt>Formula</dt><dd><div class="eq">${m.eq.map(l => `<div>${rich(l, K, false)}</div>`).join('')}</div></dd>
+          <dt>Variables</dt><dd><dl class="vars">${m.vars.map(v => `<dt>${tok(v.n, K)}</dt><dd>${rich(v.d, K, false)}</dd>`).join('')}</dl></dd>
+          <dt>${CFG.inLabel}</dt><dd class="wide"><div class="f">${src}</div></dd>
+          <dt>${CFG.rowsLabel}</dt><dd>${rows}</dd>
+          <dt>Gaps</dt><dd>${gaps}</dd>
+          <dt>Checks</dt><dd>${checks}</dd>
         </dl>
       </div>`);
   });
 });
-
+// The cards are drawn after load, so a link straight to one card needs a nudge.
+if (location.hash.length > 1) { const el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
 </script>
 </body>
 </html>
